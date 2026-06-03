@@ -1,0 +1,17 @@
+# MATLAB autosave
+*.asv
+
+# MATLAB temporary files
+*.m~
+*.bak
+*.tmp
+*.log
+
+# Generated results
+results/*
+!results/.gitkeep
+
+# OS/editor
+Thumbs.db
+.DS_Store
+.vscode/
