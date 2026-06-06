@@ -1,5 +1,5 @@
 function env = fixedChordEnvelope(rFun, drFun, L, opts)
-%FIXEDCHORDENVELOPE Compute envelope of fixed-length chords on a 2D parametric curve.
+%FIXEDCHORDENVELOPE Local-Newton version for fixed-length chord envelopes.
 %
 % Problem:
 %   M = r(u)
@@ -18,6 +18,9 @@ function env = fixedChordEnvelope(rFun, drFun, L, opts)
 %   d'(u) = r'(v) * v'(u) - r'(u)
 %   v'(u) = dot(d, r'(u)) / dot(d, r'(v))
 %
+% This version only uses local Newton continuation to solve v(u).
+% It does NOT use global grid search or fzero.
+%
 % Inputs:
 %   rFun  : function handle, rFun(w) -> [x, y]
 %   drFun : function handle, drFun(w) -> [dx, dy]
@@ -25,33 +28,30 @@ function env = fixedChordEnvelope(rFun, drFun, L, opts)
 %   L     : fixed chord length
 %   opts  : optional struct
 %
-% opts fields:
-%   opts.uRange      : [uMin, uMax], default [0, 1]
-%   opts.nU          : number of u samples, default 300
-%   opts.nVGrid      : grid samples for root bracketing, default 500
-%   opts.epsV        : minimum v-u gap, default 1e-8
-%   opts.tolDen      : degeneracy tolerance, default 1e-10
-%   opts.diffStep    : finite difference step if drFun=[], default 1e-6
-%   opts.rootMode    : 'first' only for now, default 'first'
+% Main opts:
+%   opts.uRange          : [uMin, uMax], default [0, 1]
+%   opts.nU              : number of u samples, default 300
+%   opts.epsV            : minimum v-u gap, default 1e-8
+%   opts.tolDen          : denominator tolerance, default 1e-10
+%   opts.diffStep        : finite difference step if drFun=[], default 1e-6
+%   opts.rootTol         : length residual tolerance, default 1e-6
+%   opts.newtonMaxIter   : Newton max iterations, default 10
+%   opts.newtonMaxStep   : max Newton step in parameter; if NaN, use 5*du
+%   opts.newtonDamping   : true/false, default true
+%   opts.enableTiming    : true/false, default false
 %
 % Outputs:
-%   env.u            : sampled u values
-%   env.v            : solved v(u)
-%   env.vp           : v'(u)
-%   env.M            : M points
-%   env.N            : N points
-%   env.G            : envelope points
-%   env.lambda       : lambda values
-%   env.validLine    : true if envelope of extended line is valid
-%   env.validSegment : true if lambda in [0,1], true finite-segment envelope
-%   env.residual     : ||N-M|| - L
-%   env.opts         : used options
+%   env.u, env.v, env.vp, env.M, env.N, env.G, env.lambda
+%   env.validLine, env.validSegment, env.residual
+%   env.timing
 
     if nargin < 4
         opts = struct();
     end
 
     opts = setDefaultOpts(opts);
+    timing = emptyTiming();
+    tTotal = tic;
 
     if isempty(drFun)
         drFun = @(w) numericalDerivative(rFun, w, opts.diffStep, opts.uRange);
@@ -59,8 +59,17 @@ function env = fixedChordEnvelope(rFun, drFun, L, opts)
 
     uMin = opts.uRange(1);
     uMax = opts.uRange(2);
-
     uList = linspace(uMin, uMax, opts.nU).';
+
+    if opts.nU > 1
+        duDefault = mean(diff(uList));
+    else
+        duDefault = 1e-3;
+    end
+
+    if isnan(opts.newtonMaxStep)
+        opts.newtonMaxStep = 5 * duDefault;
+    end
 
     MList = nan(opts.nU, 2);
     NList = nan(opts.nU, 2);
@@ -73,42 +82,76 @@ function env = fixedChordEnvelope(rFun, drFun, L, opts)
     validLine = false(opts.nU, 1);
     validSegment = false(opts.nU, 1);
 
+    prev = struct();
+    prev.has = false;
+    prev.u = NaN;
+    prev.v = NaN;
+    prev.vp = NaN;
+
     for k = 1:opts.nU
         u = uList(k);
 
+        %% ---------- evaluate M and r'(u) ----------
+        tEvalM = tic;
         M = evalRow(rFun, u);
         ru = evalRow(drFun, u);
+        timing.evalM = timing.evalM + toc(tEvalM);
 
-        v = solveForwardV(rFun, u, L, opts);
+        %% ---------- solve v(u) by local Newton ----------
+        tSolveV = tic;
+        [v, solveStats] = solveForwardVNewtonLocal(rFun, drFun, M, ru, u, L, opts, prev, duDefault);
+        timing.solveV = timing.solveV + toc(tSolveV);
+
+        timing.newton = timing.newton + solveStats.newtonTime;
+        timing.numNewtonCall = timing.numNewtonCall + solveStats.numNewtonCall;
+        timing.numNewtonIter = timing.numNewtonIter + solveStats.numNewtonIter;
+        timing.numNewtonSuccess = timing.numNewtonSuccess + solveStats.numNewtonSuccess;
+        timing.numNewtonFail = timing.numNewtonFail + solveStats.numNewtonFail;
+        timing.numDirectAccept = timing.numDirectAccept + solveStats.numDirectAccept;
 
         if isnan(v)
             continue;
         end
 
+        %% ---------- evaluate N and r'(v) ----------
+        tEvalN = tic;
         N = evalRow(rFun, v);
         rv = evalRow(drFun, v);
+        timing.evalN = timing.evalN + toc(tEvalN);
+
+        %% ---------- envelope formula ----------
+        tFormula = tic;
 
         d = N - M;
         residual = norm(d) - L;
 
         denomVp = dot(d, rv);
         if abs(denomVp) < opts.tolDen
+            timing.formula = timing.formula + toc(tFormula);
             continue;
         end
 
         vp = dot(d, ru) / denomVp;
 
-        dp = rv * vp - ru;
+        % Update continuation state after v and vp are valid.
+        prev.has = true;
+        prev.u = u;
+        prev.v = v;
+        prev.vp = vp;
 
+        dp = rv * vp - ru;
         den = cross2(d, dp);
         if abs(den) < opts.tolDen
+            timing.formula = timing.formula + toc(tFormula);
             continue;
         end
 
         lambda = cross2(ru, d) / den;
-
         G = M + lambda * d;
 
+        timing.formula = timing.formula + toc(tFormula);
+
+        %% ---------- save ----------
         MList(k, :) = M;
         NList(k, :) = N;
         GList(k, :) = G;
@@ -124,6 +167,12 @@ function env = fixedChordEnvelope(rFun, drFun, L, opts)
         end
     end
 
+    timing.total = toc(tTotal);
+    timing.other = timing.total - timing.evalM - timing.solveV - timing.evalN - timing.formula;
+    timing.numU = opts.nU;
+    timing.numValidLine = sum(validLine);
+    timing.numValidSegment = sum(validSegment);
+
     env = struct();
     env.u = uList;
     env.v = vList;
@@ -136,6 +185,149 @@ function env = fixedChordEnvelope(rFun, drFun, L, opts)
     env.validSegment = validSegment;
     env.residual = residualList;
     env.opts = opts;
+    env.timing = timing;
+
+    if opts.enableTiming
+        printEnvelopeTiming(timing, opts);
+    end
+end
+
+%% ============================================================
+% Local Newton solver for v(u)
+%% ============================================================
+
+function [vRoot, stats] = solveForwardVNewtonLocal(rFun, drFun, M, ru, u, L, opts, prev, duDefault)
+    stats = emptySolveStats();
+    stats.numNewtonCall = 1;
+    vRoot = NaN;
+
+    uMax = opts.uRange(2);
+    if u >= uMax - opts.epsV
+        stats.numNewtonFail = 1;
+        return;
+    end
+
+    % Initial guess: continuation if possible; otherwise local tangent estimate.
+    if prev.has && isfinite(prev.v) && prev.v > u
+        du = u - prev.u;
+        if isfinite(prev.vp)
+            v = prev.v + prev.vp * du;
+        else
+            v = prev.v + du;
+        end
+    else
+        speed = norm(ru);
+        if speed < opts.tolDen
+            stats.numNewtonFail = 1;
+            return;
+        end
+        v = u + L / speed;
+    end
+
+    v = min(max(v, u + opts.epsV), uMax);
+
+    tNewton = tic;
+
+    % Direct accept if initial guess is already good enough.
+    [g, gp, ok] = lengthResidualAndDerivative(rFun, drFun, M, v, L, opts.tolDen);
+    if ok && abs(g) <= opts.rootTol
+        vRoot = v;
+        stats.numDirectAccept = 1;
+        stats.numNewtonSuccess = 1;
+        stats.newtonTime = toc(tNewton);
+        return;
+    end
+
+    success = false;
+
+    for it = 1:opts.newtonMaxIter
+        stats.numNewtonIter = stats.numNewtonIter + 1;
+
+        [g, gp, ok] = lengthResidualAndDerivative(rFun, drFun, M, v, L, opts.tolDen);
+        if ~ok || ~isfinite(gp)
+            break;
+        end
+
+        if abs(g) <= opts.rootTol
+            success = true;
+            break;
+        end
+
+        step = g / gp;
+
+        % Limit step to keep Newton local and bias toward nearest forward root.
+        if opts.newtonMaxStep > 0
+            step = max(-opts.newtonMaxStep, min(opts.newtonMaxStep, step));
+        end
+
+        vNew = v - step;
+
+        if vNew <= u + opts.epsV || vNew > uMax || ~isfinite(vNew)
+            break;
+        end
+
+        if opts.newtonDamping
+            gAbs = abs(g);
+            dampCount = 0;
+            while dampCount < opts.maxDampingIter
+                [gNew, ~, okNew] = lengthResidualAndDerivative(rFun, drFun, M, vNew, L, opts.tolDen);
+                if okNew && abs(gNew) <= opts.dampingAcceptRatio * gAbs
+                    break;
+                end
+
+                step = 0.5 * step;
+                vNew = v - step;
+
+                if vNew <= u + opts.epsV || vNew > uMax || ~isfinite(vNew)
+                    break;
+                end
+
+                dampCount = dampCount + 1;
+            end
+
+            if vNew <= u + opts.epsV || vNew > uMax || ~isfinite(vNew)
+                break;
+            end
+        end
+
+        v = vNew;
+    end
+
+    % Final accept check.
+    [gFinal, ~, okFinal] = lengthResidualAndDerivative(rFun, drFun, M, v, L, opts.tolDen);
+    if okFinal && abs(gFinal) <= opts.rootTol && v > u && v <= uMax
+        success = true;
+    end
+
+    stats.newtonTime = toc(tNewton);
+
+    if success
+        vRoot = v;
+        stats.numNewtonSuccess = 1;
+    else
+        vRoot = NaN;
+        stats.numNewtonFail = 1;
+    end
+end
+
+function [g, gp, ok] = lengthResidualAndDerivative(rFun, drFun, M, v, L, tolDen)
+    Rv = evalRow(rFun, v);
+    rv = evalRow(drFun, v);
+
+    d = Rv - M;
+    dist = norm(d);
+
+    if dist < tolDen
+        g = NaN;
+        gp = NaN;
+        ok = false;
+        return;
+    end
+
+    g = dist - L;
+    gp = dot(d, rv) / dist;
+
+    ok = abs(gp) >= tolDen;
 end
 
 %% ============================================================
@@ -149,9 +341,6 @@ function opts = setDefaultOpts(opts)
     if ~isfield(opts, 'nU')
         opts.nU = 300;
     end
-    if ~isfield(opts, 'nVGrid')
-        opts.nVGrid = 500;
-    end
     if ~isfield(opts, 'epsV')
         opts.epsV = 1e-8;
     end
@@ -161,57 +350,60 @@ function opts = setDefaultOpts(opts)
     if ~isfield(opts, 'diffStep')
         opts.diffStep = 1e-6;
     end
-    if ~isfield(opts, 'rootMode')
-        opts.rootMode = 'first';
+    if ~isfield(opts, 'enableTiming')
+        opts.enableTiming = false;
+    end
+
+    % Local Newton options.
+    if ~isfield(opts, 'rootTol')
+        opts.rootTol = 1e-6;
+    end
+    if ~isfield(opts, 'newtonMaxIter')
+        opts.newtonMaxIter = 10;
+    end
+    if ~isfield(opts, 'newtonMaxStep')
+        % NaN means use 5 * mean du.
+        opts.newtonMaxStep = NaN;
+    end
+    if ~isfield(opts, 'newtonDamping')
+        opts.newtonDamping = true;
+    end
+    if ~isfield(opts, 'maxDampingIter')
+        opts.maxDampingIter = 6;
+    end
+    if ~isfield(opts, 'dampingAcceptRatio')
+        opts.dampingAcceptRatio = 0.9;
     end
 end
 
-function vRoot = solveForwardV(rFun, u, L, opts)
-    uMax = opts.uRange(2);
+function stats = emptySolveStats()
+    stats = struct();
+    stats.newtonTime = 0;
+    stats.numNewtonCall = 0;
+    stats.numNewtonIter = 0;
+    stats.numNewtonSuccess = 0;
+    stats.numNewtonFail = 0;
+    stats.numDirectAccept = 0;
+end
 
-    if u >= uMax - opts.epsV
-        vRoot = NaN;
-        return;
-    end
+function timing = emptyTiming()
+    timing = struct();
+    timing.total = 0;
+    timing.evalM = 0;
+    timing.solveV = 0;
+    timing.evalN = 0;
+    timing.formula = 0;
+    timing.newton = 0;
+    timing.other = 0;
 
-    M = evalRow(rFun, u);
-
-    vGrid = linspace(u + opts.epsV, uMax, opts.nVGrid);
-    g = nan(size(vGrid));
-
-    for i = 1:numel(vGrid)
-        R = evalRow(rFun, vGrid(i));
-        g(i) = norm(R - M) - L;
-    end
-
-    % Find the first sign change.
-    idx = find(g(1:end-1) <= 0 & g(2:end) >= 0, 1, 'first');
-
-    % Handle the rare case where a grid sample is already very close to zero.
-    if isempty(idx)
-        [minAbsG, iMin] = min(abs(g));
-        if minAbsG < 1e-8
-            vRoot = vGrid(iMin);
-        else
-            vRoot = NaN;
-        end
-        return;
-    end
-
-    v1 = vGrid(idx);
-    v2 = vGrid(idx + 1);
-
-    fun = @(v) norm(evalRow(rFun, v) - M) - L;
-
-    try
-        vRoot = fzero(fun, [v1, v2]);
-    catch
-        vRoot = NaN;
-    end
-
-    if isnan(vRoot) || vRoot <= u || vRoot > uMax
-        vRoot = NaN;
-    end
+    timing.numU = 0;
+    timing.numValidLine = 0;
+    timing.numValidSegment = 0;
+    timing.numNewtonCall = 0;
+    timing.numNewtonIter = 0;
+    timing.numNewtonSuccess = 0;
+    timing.numNewtonFail = 0;
+    timing.numDirectAccept = 0;
 end
 
 function x = evalRow(fun, w)
@@ -238,4 +430,53 @@ end
 
 function z = cross2(a, b)
     z = a(1) * b(2) - a(2) * b(1);
+end
+
+function printEnvelopeTiming(t, opts)
+    safeTotal = max(t.total, 1e-12);
+    safeSolveV = max(t.solveV, 1e-12);
+
+    fprintf('\n[fixedChordEnvelope timing: local Newton only]\n');
+    fprintf('  total time              : %.3f ms\n', t.total * 1000);
+    fprintf('  u samples               : %d\n', t.numU);
+    fprintf('  valid line envelopes    : %d\n', t.numValidLine);
+    fprintf('  valid segment envelopes : %d\n', t.numValidSegment);
+
+    fprintf('  eval M + r''(u)          : %.3f ms  (%5.1f%% total)\n', ...
+        t.evalM * 1000, 100 * t.evalM / safeTotal);
+
+    fprintf('  solve v(u)              : %.3f ms  (%5.1f%% total)\n', ...
+        t.solveV * 1000, 100 * t.solveV / safeTotal);
+
+    fprintf('    local Newton          : %.3f ms  (%5.1f%% solveV)\n', ...
+        t.newton * 1000, 100 * t.newton / safeSolveV);
+
+    fprintf('  eval N + r''(v)          : %.3f ms  (%5.1f%% total)\n', ...
+        t.evalN * 1000, 100 * t.evalN / safeTotal);
+
+    fprintf('  envelope formula        : %.3f ms  (%5.1f%% total)\n', ...
+        t.formula * 1000, 100 * t.formula / safeTotal);
+
+    fprintf('  other                   : %.3f ms  (%5.1f%% total)\n', ...
+        t.other * 1000, 100 * t.other / safeTotal);
+
+    fprintf('  Newton calls            : %d\n', t.numNewtonCall);
+    fprintf('  Newton success          : %d\n', t.numNewtonSuccess);
+    fprintf('  Newton failed           : %d\n', t.numNewtonFail);
+    fprintf('  Direct accept           : %d\n', t.numDirectAccept);
+    fprintf('  Newton total iterations : %d\n', t.numNewtonIter);
+
+    if t.numNewtonCall > 0
+        fprintf('  Newton avg iterations   : %.2f\n', ...
+            t.numNewtonIter / max(1, t.numNewtonCall));
+    end
+
+    if t.numNewtonFail > 0
+        fprintf('  [note] %d samples failed local Newton. This is expected near the curve end or difficult regions.\n', ...
+            t.numNewtonFail);
+    end
+
+    if opts.rootTol > 1e-8
+        fprintf('  [note] rootTol = %.1e, optimized for speed rather than very high precision.\n', opts.rootTol);
+    end
 end
