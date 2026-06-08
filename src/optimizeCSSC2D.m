@@ -1,15 +1,28 @@
 function [Popt, info] = optimizeCSSC2D(Pinit, Pref, obstacles, params)
-%OPTIMIZECSSC2D Simple Adam optimizer with finite-difference gradients.
+%OPTIMIZECSSC2D Adam optimizer with finite-difference gradients and stage saving.
 %
-% Added timing debug:
-%   - total iteration time
-%   - main objective time
-%   - finite-difference gradient time
-%   - Adam update time
-%   - objective call count
-%   - objective internal timing: envelope / obstacle / regularization / curvature
+% Added result features:
+%   - automatically creates results/<runName>/;
+%   - saves progress.csv;
+%   - saves snapshots/stage_iter_XXXXXX.mat every params.resultSaveInterval;
+%   - saves final_result.mat and summary.txt after optimization;
+%   - writes console messages to logs/optimization_log.txt.
+%
+% Required external function:
+%   objectiveCSSC2D(P, Pref, obstacles, params)
 
+    if nargin < 4
+        params = struct();
+    end
     params = setDefaultParamsLocal(params);
+
+    [resultDir, snapshotDir, logDir] = prepareResultDirs(params);
+    logFile = fullfile(logDir, 'optimization_log.txt');
+    logFID = fopen(logFile, 'w');
+    cleaner = onCleanup(@() closeLogFile(logFID)); %#ok<NASGU>
+
+    progressCsv = fullfile(resultDir, 'progress.csv');
+    writeProgressHeader(progressCsv);
 
     P = Pinit;
     P(1,:) = Pref(1,:);
@@ -19,21 +32,26 @@ function [Popt, info] = optimizeCSSC2D(Pinit, Pref, obstacles, params)
     M = zeros(size(x));
     V = zeros(size(x));
 
+    info = struct();
+    info.resultDir = resultDir;
+    info.snapshotDir = snapshotDir;
+    info.logDir = logDir;
+    info.logFile = logFile;
+    info.progressCsv = progressCsv;
+
     info.Jhist = zeros(params.numIter, 1);
     info.minClearHist = zeros(params.numIter, 1);
+    info.gradNormHist = zeros(params.numIter, 1);
     info.snapshots = cell(0,1);
     info.snapshotIters = [];
 
-    % ---------- Timing storage ----------
     info.timing.totalIter = zeros(params.numIter, 1);
     info.timing.mainObjective = zeros(params.numIter, 1);
     info.timing.gradient = zeros(params.numIter, 1);
     info.timing.update = zeros(params.numIter, 1);
-
     info.timing.objCalls = zeros(params.numIter, 1);
     info.timing.objAll = zeros(params.numIter, 1);
     info.timing.objAvg = zeros(params.numIter, 1);
-
     info.timing.envelope = zeros(params.numIter, 1);
     info.timing.obstacle = zeros(params.numIter, 1);
     info.timing.regularization = zeros(params.numIter, 1);
@@ -42,25 +60,30 @@ function [Popt, info] = optimizeCSSC2D(Pinit, Pref, obstacles, params)
 
     objFun = @(xx) objectiveFromVector(xx, P, Pref, obstacles, params);
 
+    logMsg(logFID, 'CSSC optimization started: %s\n', datestr(now, 31));
+    logMsg(logFID, 'Result directory: %s\n', resultDir);
+
+    if params.enableResultSave
+        save(fullfile(resultDir, 'initial_problem.mat'), ...
+            'Pinit', 'Pref', 'obstacles', 'params', params.saveMatFlag);
+    end
+
     for iter = 1:params.numIter
         tIter = tic;
 
-        % ---------- Main objective ----------
         tMainObj = tic;
         [J, details] = objFun(x);
         dtMainObj = toc(tMainObj);
 
-        % ---------- Finite-difference gradient ----------
         tGrad = tic;
         [G, gradStats] = finiteDifferenceGradientTimed(objFun, x, params.fdStep);
         dtGrad = toc(tGrad);
 
-        % ---------- Adam update ----------
         tUpdate = tic;
 
-        gnorm = norm(G);
-        if gnorm > params.gradClip
-            G = G * params.gradClip / (gnorm + 1e-12);
+        gnormRaw = norm(G);
+        if gnormRaw > params.gradClip
+            G = G * params.gradClip / (gnormRaw + 1e-12);
         end
 
         M = params.beta1 * M + (1 - params.beta1) * G;
@@ -70,21 +93,20 @@ function [Popt, info] = optimizeCSSC2D(Pinit, Pref, obstacles, params)
         Vhat = V / (1 - params.beta2^iter);
 
         x = x - params.lr * Mhat ./ (sqrt(Vhat) + params.epsAdam);
-
         dtUpdate = toc(tUpdate);
-
         dtIter = toc(tIter);
 
-        % ---------- History ----------
-        info.Jhist(iter) = J;
-        info.minClearHist(iter) = details.minClear;
+        Pcur = unpackInterior(x, P);
 
-        if mod(iter, params.saveInterval) == 0 || iter == 1 || iter == params.numIter
-            info.snapshots{end+1} = unpackInterior(x, P);
+        info.Jhist(iter) = J;
+        info.minClearHist(iter) = safeGet(details, 'minClear', NaN);
+        info.gradNormHist(iter) = gnormRaw;
+
+        if shouldSaveSnapshot(iter, params)
+            info.snapshots{end+1} = Pcur;
             info.snapshotIters(end+1) = iter;
         end
 
-        % ---------- Timing aggregation ----------
         mainTiming = getTiming(details);
         totalTiming = addTiming(mainTiming, gradStats.timingSum);
 
@@ -95,11 +117,9 @@ function [Popt, info] = optimizeCSSC2D(Pinit, Pref, obstacles, params)
         info.timing.mainObjective(iter) = dtMainObj;
         info.timing.gradient(iter) = dtGrad;
         info.timing.update(iter) = dtUpdate;
-
         info.timing.objCalls(iter) = totalObjCalls;
         info.timing.objAll(iter) = totalObjTime;
         info.timing.objAvg(iter) = totalObjTime / max(1, totalObjCalls);
-
         info.timing.envelope(iter) = totalTiming.envelope;
         info.timing.obstacle(iter) = totalTiming.obstacle;
         info.timing.regularization(iter) = totalTiming.regularization;
@@ -109,27 +129,48 @@ function [Popt, info] = optimizeCSSC2D(Pinit, Pref, obstacles, params)
                        totalTiming.regularization + totalTiming.curvature;
         info.timing.objectiveOther(iter) = max(0, totalObjTime - knownObjTime);
 
-        % ---------- Normal progress print ----------
+        appendProgressLine(progressCsv, iter, J, info.minClearHist(iter), ...
+            gnormRaw, dtIter, dtMainObj, dtGrad, dtUpdate, totalObjCalls, totalObjTime);
+
         if mod(iter, params.printInterval) == 0 || iter == 1 || iter == params.numIter
-            fprintf('iter %4d | J = %.6g | minClear = %.4f\n', ...
-                iter, J, details.minClear);
+            logMsg(logFID, 'iter %4d | J = %.6g | minClear = %.4f | gradNorm = %.3g\n', ...
+                iter, J, info.minClearHist(iter), gnormRaw);
         end
 
-        % ---------- Timing debug print ----------
         if params.enableTimingDebug && ...
            (mod(iter, params.timingPrintInterval) == 0 || iter == 1 || iter == params.numIter)
-            printTimingDebug(info, iter, params);
+            printTimingDebug(logFID, info, iter, params);
+        end
+
+        if params.enableResultSave && shouldSaveResult(iter, params)
+            stageInfo = trimInfoToIter(info, iter);
+            stageFile = fullfile(snapshotDir, sprintf('stage_iter_%06d.mat', iter));
+            save(stageFile, ...
+                'iter', 'Pcur', 'Pinit', 'Pref', 'obstacles', 'params', ...
+                'J', 'details', 'stageInfo', params.saveMatFlag);
+
+            if params.verboseSave
+                logMsg(logFID, '  [save] stage result saved: %s\n', stageFile);
+            end
         end
     end
 
     Popt = unpackInterior(x, P);
     [info.finalJ, info.finalDetails] = objectiveCSSC2D(Popt, Pref, obstacles, params);
-    info.finalMinClear = info.finalDetails.minClear;
-end
+    info.finalMinClear = safeGet(info.finalDetails, 'minClear', NaN);
+    info.finishedAt = datestr(now, 31);
 
-%% ============================================================
-% Local helpers
-%% ============================================================
+    logMsg(logFID, '\nCSSC optimization finished: %s\n', info.finishedAt);
+    logMsg(logFID, 'Final J        : %.8g\n', info.finalJ);
+    logMsg(logFID, 'Final minClear : %.8g\n', info.finalMinClear);
+
+    if params.enableResultSave
+        finalFile = fullfile(resultDir, 'final_result.mat');
+        save(finalFile, 'Popt', 'Pinit', 'Pref', 'obstacles', 'params', 'info', params.saveMatFlag);
+        writeSummaryText(fullfile(resultDir, 'summary.txt'), info, params);
+        logMsg(logFID, 'Final result saved: %s\n', finalFile);
+    end
+end
 
 function [J, details] = objectiveFromVector(x, Ptemplate, Pref, obstacles, params)
     P = unpackInterior(x, Ptemplate);
@@ -149,16 +190,13 @@ end
 
 function [G, stats] = finiteDifferenceGradientTimed(objFun, x, h)
     G = zeros(size(x));
-
     stats.numObjCalls = 0;
     stats.objTotalTime = 0;
     stats.timingSum = emptyTiming();
 
     for k = 1:numel(x)
         hk = h * max(1, abs(x(k)));
-
-        xp = x;
-        xm = x;
+        xp = x; xm = x;
         xp(k) = xp(k) + hk;
         xm(k) = xm(k) - hk;
 
@@ -180,6 +218,137 @@ function [G, stats] = finiteDifferenceGradientTimed(objFun, x, h)
     end
 end
 
+function [resultDir, snapshotDir, logDir] = prepareResultDirs(params)
+    root = getProjectRootLocal(params);
+    resultRoot = params.resultRoot;
+    if ~isAbsolutePath(resultRoot)
+        resultRoot = fullfile(root, resultRoot);
+    end
+
+    if isempty(params.runName)
+        runName = ['run_', datestr(now, 'yyyymmdd_HHMMSS')];
+    else
+        runName = params.runName;
+    end
+
+    resultDir = fullfile(resultRoot, runName);
+    snapshotDir = fullfile(resultDir, 'snapshots');
+    logDir = fullfile(resultDir, 'logs');
+
+    if ~exist(resultDir, 'dir'); mkdir(resultDir); end
+    if ~exist(snapshotDir, 'dir'); mkdir(snapshotDir); end
+    if ~exist(logDir, 'dir'); mkdir(logDir); end
+end
+
+function root = getProjectRootLocal(params)
+    if isfield(params, 'projectRoot') && ~isempty(params.projectRoot)
+        root = params.projectRoot;
+        return;
+    end
+
+    try
+        root = evalin('base', 'CSSC_PROJECT_ROOT');
+        if ischar(root) || isstring(root)
+            root = char(root);
+            return;
+        end
+    catch
+    end
+
+    root = pwd;
+end
+
+function tf = isAbsolutePath(p)
+    p = char(p);
+    if ispc
+        tf = numel(p) >= 2 && p(2) == ':';
+    else
+        tf = startsWith(p, filesep);
+    end
+end
+
+function tf = shouldSaveSnapshot(iter, params)
+    tf = mod(iter, params.saveInterval) == 0 || iter == 1 || iter == params.numIter;
+end
+
+function tf = shouldSaveResult(iter, params)
+    tf = mod(iter, params.resultSaveInterval) == 0 || iter == 1 || iter == params.numIter;
+end
+
+function info2 = trimInfoToIter(info, iter)
+    info2 = info;
+    histFields = {'Jhist', 'minClearHist', 'gradNormHist'};
+    for i = 1:numel(histFields)
+        f = histFields{i};
+        if isfield(info2, f)
+            info2.(f) = info2.(f)(1:iter);
+        end
+    end
+
+    if isfield(info2, 'timing')
+        tf = fieldnames(info2.timing);
+        for i = 1:numel(tf)
+            f = tf{i};
+            val = info2.timing.(f);
+            if isnumeric(val) && numel(val) >= iter
+                info2.timing.(f) = val(1:iter);
+            end
+        end
+    end
+end
+
+function writeProgressHeader(csvFile)
+    fid = fopen(csvFile, 'w');
+    if fid < 0; return; end
+    fprintf(fid, 'iter,J,minClear,gradNorm,totalIter,mainObjective,gradient,update,objCalls,objAll\n');
+    fclose(fid);
+end
+
+function appendProgressLine(csvFile, iter, J, minClear, gradNorm, totalIter, mainObj, gradTime, updateTime, objCalls, objAll)
+    fid = fopen(csvFile, 'a');
+    if fid < 0; return; end
+    fprintf(fid, '%d,%.15g,%.15g,%.15g,%.15g,%.15g,%.15g,%.15g,%d,%.15g\n', ...
+        iter, J, minClear, gradNorm, totalIter, mainObj, gradTime, updateTime, objCalls, objAll);
+    fclose(fid);
+end
+
+function writeSummaryText(summaryFile, info, params)
+    fid = fopen(summaryFile, 'w');
+    if fid < 0; return; end
+
+    fprintf(fid, 'CSSC Optimization Summary\n');
+    fprintf(fid, '=========================\n\n');
+    fprintf(fid, 'Finished at        : %s\n', info.finishedAt);
+    fprintf(fid, 'Result directory   : %s\n', info.resultDir);
+    fprintf(fid, 'numIter            : %d\n', params.numIter);
+    fprintf(fid, 'printInterval      : %d\n', params.printInterval);
+    fprintf(fid, 'resultSaveInterval : %d\n', params.resultSaveInterval);
+    fprintf(fid, 'Final J            : %.15g\n', info.finalJ);
+    fprintf(fid, 'Final minClear     : %.15g\n', info.finalMinClear);
+
+    if isfield(info, 'Jhist')
+        [bestJ, bestIter] = min(info.Jhist);
+        [bestClear, bestClearIter] = max(info.minClearHist);
+        fprintf(fid, 'Best J             : %.15g at iter %d\n', bestJ, bestIter);
+        fprintf(fid, 'Best minClear      : %.15g at iter %d\n', bestClear, bestClearIter);
+    end
+
+    fclose(fid);
+end
+
+function closeLogFile(fid)
+    if fid > 2
+        fclose(fid);
+    end
+end
+
+function logMsg(fid, varargin)
+    fprintf(varargin{:});
+    if fid > 2
+        fprintf(fid, varargin{:});
+    end
+end
+
 function timing = emptyTiming()
     timing = struct();
     timing.envelope = 0;
@@ -190,7 +359,6 @@ end
 
 function timing = getTiming(details)
     timing = emptyTiming();
-
     if isfield(details, 'timing')
         f = fieldnames(timing);
         for i = 1:numel(f)
@@ -209,7 +377,7 @@ function out = addTiming(a, b)
     end
 end
 
-function printTimingDebug(info, iter, params)
+function printTimingDebug(logFID, info, iter, params)
     win = min(params.timingPrintWindow, iter);
     idx = iter - win + 1 : iter;
 
@@ -231,36 +399,36 @@ function printTimingDebug(info, iter, params)
     safeTotal = max(tTotal, 1e-12);
     safeObjAll = max(objAll, 1e-12);
 
-    fprintf('\n[TIMING] recent %d iters, up to iter %d\n', win, iter);
-    fprintf('  total / iter              : %.3f ms\n', tTotal * 1000);
-    fprintf('  main objective            : %.3f ms  (%5.1f%% total)\n', ...
+    logMsg(logFID, '\n[TIMING] recent %d iters, up to iter %d\n', win, iter);
+    logMsg(logFID, '  total / iter              : %.3f ms\n', tTotal * 1000);
+    logMsg(logFID, '  main objective            : %.3f ms  (%5.1f%% total)\n', ...
         tMainObj * 1000, 100 * tMainObj / safeTotal);
-    fprintf('  finite-diff gradient      : %.3f ms  (%5.1f%% total)\n', ...
+    logMsg(logFID, '  finite-diff gradient      : %.3f ms  (%5.1f%% total)\n', ...
         tGrad * 1000, 100 * tGrad / safeTotal);
-    fprintf('  Adam update               : %.3f ms  (%5.1f%% total)\n', ...
+    logMsg(logFID, '  Adam update               : %.3f ms  (%5.1f%% total)\n', ...
         tUpdate * 1000, 100 * tUpdate / safeTotal);
 
-    fprintf('  objective calls / iter    : %.1f\n', objCalls);
-    fprintf('  avg objective call        : %.3f ms\n', objAvg * 1000);
-    fprintf('  all objective time        : %.3f ms\n', objAll * 1000);
+    logMsg(logFID, '  objective calls / iter    : %.1f\n', objCalls);
+    logMsg(logFID, '  avg objective call        : %.3f ms\n', objAvg * 1000);
+    logMsg(logFID, '  all objective time        : %.3f ms\n', objAll * 1000);
 
-    fprintf('    fixedChordEnvelope      : %.3f ms  (%5.1f%% obj)\n', ...
+    logMsg(logFID, '    fixedChordEnvelope      : %.3f ms  (%5.1f%% obj)\n', ...
         tEnvelope * 1000, 100 * tEnvelope / safeObjAll);
-    fprintf('    obstacle clearance      : %.3f ms  (%5.1f%% obj)\n', ...
+    logMsg(logFID, '    obstacle clearance      : %.3f ms  (%5.1f%% obj)\n', ...
         tObstacle * 1000, 100 * tObstacle / safeObjAll);
-    fprintf('    ref/smooth/length       : %.3f ms  (%5.1f%% obj)\n', ...
+    logMsg(logFID, '    ref/smooth/length       : %.3f ms  (%5.1f%% obj)\n', ...
         tReg * 1000, 100 * tReg / safeObjAll);
-    fprintf('    curvature               : %.3f ms  (%5.1f%% obj)\n', ...
+    logMsg(logFID, '    curvature               : %.3f ms  (%5.1f%% obj)\n', ...
         tCurv * 1000, 100 * tCurv / safeObjAll);
-    fprintf('    other objective time    : %.3f ms  (%5.1f%% obj)\n', ...
+    logMsg(logFID, '    other objective time    : %.3f ms  (%5.1f%% obj)\n', ...
         tOther * 1000, 100 * tOther / safeObjAll);
+end
 
-    if tGrad > 0.7 * tTotal
-        fprintf('  [hint] finite-difference gradient dominates. Consider analytic/semi-analytic gradient.\n');
-    elseif tEnvelope > 0.5 * objAll
-        fprintf('  [hint] fixedChordEnvelope dominates. Reduce envOpts.nU/nVGrid or add warm start.\n');
-    elseif tObstacle > 0.5 * objAll
-        fprintf('  [hint] obstacle clearance dominates. Use active obstacles or faster min-u search.\n');
+function v = safeGet(s, fieldName, defaultValue)
+    if isstruct(s) && isfield(s, fieldName)
+        v = s.(fieldName);
+    else
+        v = defaultValue;
     end
 end
 
@@ -278,4 +446,14 @@ function params = setDefaultParamsLocal(params)
     if ~isfield(params, 'enableTimingDebug'); params.enableTimingDebug = true; end
     if ~isfield(params, 'timingPrintInterval'); params.timingPrintInterval = 10; end
     if ~isfield(params, 'timingPrintWindow'); params.timingPrintWindow = 5; end
+
+    if ~isfield(params, 'enableResultSave'); params.enableResultSave = true; end
+    if ~isfield(params, 'projectRoot'); params.projectRoot = ''; end
+    if ~isfield(params, 'resultRoot'); params.resultRoot = 'results'; end
+    if ~isfield(params, 'runName'); params.runName = ''; end
+    if ~isfield(params, 'resultSaveInterval') || isempty(params.resultSaveInterval)
+        params.resultSaveInterval = params.printInterval;
+    end
+    if ~isfield(params, 'verboseSave'); params.verboseSave = true; end
+    if ~isfield(params, 'saveMatFlag'); params.saveMatFlag = '-v7'; end
 end
