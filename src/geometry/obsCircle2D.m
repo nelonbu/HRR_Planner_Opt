@@ -6,4 +6,5 @@ function obs = obsCircle2D(center, radius)
     obs.radius = radius;
     obs.halfSize = [nan, nan];
     obs.yaw = 0;
+    obs.vertices = zeros(0, 2);
 end

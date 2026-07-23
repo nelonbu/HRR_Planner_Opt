@@ -10,6 +10,7 @@
 # Generated results
 results/*
 !results/.gitkeep
+paper/*
 
 # OS/editor
 Thumbs.db

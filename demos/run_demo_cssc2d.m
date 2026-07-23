@@ -1,8 +1,12 @@
 clear; clc; close all;
 
-%% CSSC-FTL 2D demo with selectable gradient mode
-% Required first if not already on path:
-%   initCSSCProjectPath;
+%% Main proposed CSSC-FTL 2D demo
+% Stable proposed pipeline:
+%   B-spline path -> CSSC fixed-chord swept envelope optimization
+%   -> semi-analytic gradient -> bestP/patience early stop
+%
+% Final reported success, minClear, and dMin satisfaction are evaluated by
+% evaluateCSSCHighPrecision, which is not used inside the optimizer.
 
 try
     projectRoot = initCSSCProjectPath;
@@ -68,6 +72,24 @@ params.solver = struct();
 params.solver.gradMode = 'semi-analytic';
 % params.solver.gradMode = 'finite-diff';
 
+% Clearance backend:
+%   'segment'  : conservative default, exact segment-obstacle clearance.
+%   'envelope' : fast G/M/N point probe only, approximate.
+%   'hybrid'   : G/M/N probe plus selective exact segment refinement.
+params.clearanceMode = 'segment';
+params.hybrid.triggerFactor = 2.0;
+params.hybrid.refineActiveTopK = true;
+params.hybrid.forceExactStride = 0;
+
+% Run mode:
+%   'formal' : fast optimization mode. Disables timing spam, diagnostic
+%              point clearances, optimization-time path sampling, and
+%              process video rendering. Console prints key iteration lines.
+%   'debug'  : diagnostic mode. Enables detailed timing, M/N/G point SDF
+%              clearances, optimization-time path sampling, and process
+%              image/video output for checking intermediate behavior.
+params.runMode = 'formal';  % 'formal' for fast runs, 'debug' for detailed diagnostics.
+
 params.numIter = 200;
 params.lr = 0.001;
 params.fdStep = 1e-5;
@@ -78,12 +100,30 @@ params.saveInterval = 20;
 params.activeTopK = 100;
 params.activeClearanceMargin = 0.0125;
 
-params.enableTimingDebug = true;
 params.timingPrintInterval = 10;
 params.timingPrintWindow = 5;
 
 %% 7. Output / plotting settings
-params.enablePathSample = false;   % Plotting functions turn this on when needed.
+switch lower(params.runMode)
+    case 'formal'
+        params.printEvalTiming = false;
+        params.enableTimingDebug = false;
+        params.enablePathSample = false;
+        params.enablePointClearance = false;
+        params.enableObstacleMetadata = false;
+        plotProcessDefault = false;
+
+    case 'debug'
+        params.printEvalTiming = true;
+        params.enableTimingDebug = true;
+        params.enablePathSample = true;
+        params.enablePointClearance = true;
+        params.enableObstacleMetadata = true;
+        plotProcessDefault = true;
+
+    otherwise
+        error('Unknown params.runMode: %s', params.runMode);
+end
 
 params.output = struct();
 params.output.enable = true;
@@ -93,10 +133,10 @@ params.output.rootDir = fullfile(projectRoot, 'results');
 params.plot = struct();
 params.plot.outputDir = '';
 params.plot.saveFinalFigure = true;
-params.plot.showProcess = true;
-params.plot.showProcessFigure = true;
-params.plot.saveProcessImage = true;
-params.plot.saveProcessVideo = true;
+params.plot.showProcess = plotProcessDefault;
+params.plot.showProcessFigure = plotProcessDefault;
+params.plot.saveProcessImage = plotProcessDefault;
+params.plot.saveProcessVideo = plotProcessDefault;
 params.plot.maxProcessCurves = 25;
 params.plot.videoFPS = 8;
 params.plot.videoQuality = 95;
@@ -112,19 +152,45 @@ end
 %% 8. Optimize
 fprintf('nCtrl = %d, optimized variables = %d\n', nCtrl, 2*(nCtrl-2));
 
-state0 = evaluateCSSCGlobal(Pinit, obstacles, params);
-fprintf('Initial minClear = %.6f\n', state0.minClear);
+paramsEval = params;
+paramsEval.envOpts.nU = 480;
+paramsEval.pathSampleN = 1200;
+paramsEval.pointClearanceResolution = 0.001;
+paramsEval.enablePathSample = true;
+paramsEval.enablePointClearance = false;
+paramsEval.enableObstacleMetadata = true;
+
+tic;
+highPrecisionInit = evaluateCSSCHighPrecision(Pinit, obstacles, paramsEval);
+fprintf('Initial high-precision clearance = %.6f\n', highPrecisionInit.minClear);
 
 [Popt, info] = optimizeCSSC2D(Pinit, Pref, obstacles, params);
 
+highPrecisionMetrics = evaluateCSSCHighPrecision(Popt, obstacles, paramsEval);
+
 fprintf('\nFinal objective: %.6g\n', info.finalJ);
-fprintf('Final minimum swept-segment clearance: %.4f\n', info.finalMinClear);
+fprintf('Final high-precision clearance: %.4f\n', highPrecisionMetrics.minClear);
 fprintf('Required clearance dMin: %.4f\n', params.dMin);
 
 if output.enable
-    save(fullfile(output.dir, 'result.mat'), ...
-        'Pinit', 'Popt', 'Pref', 'obstacles', 'params', 'info', 'output');
+    paths = struct('Pinit', Pinit, 'Popt', Popt, 'Pref', Pref, ...
+        'pathRRT', [], 'pathBSplineInit', highPrecisionInit.pathSample, ...
+        'pathOptimized', highPrecisionMetrics.pathSample);
+    timing = struct('highPrecisionInit', highPrecisionInit.timing, ...
+        'highPrecisionFinal', highPrecisionMetrics.timing);
+    successFlags = struct( ...
+        'plannerSuccess', true, ...
+        'highPrecisionSuccess', highPrecisionMetrics.success, ...
+        'dMinSatisfied', highPrecisionMetrics.dMinSatisfied, ...
+        'pointSuccess', highPrecisionMetrics.pointSuccess);
+    seed = struct('envSeed', nan, 'plannerSeed', nan, 'optimizerSeed', nan);
+    result = makeCSSCExperimentResult(params, seed, obstacles, paths, ...
+        info, highPrecisionMetrics, timing, successFlags);
+    result.highPrecisionInit = highPrecisionInit;
+
+    save(fullfile(output.dir, 'result.mat'), 'result');
 end
+toc
 
 %% 9. Plot
 plotCSSCResult2D(Pinit, Popt, obstacles, params, info);

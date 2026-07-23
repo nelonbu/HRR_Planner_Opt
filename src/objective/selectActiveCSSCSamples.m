@@ -14,6 +14,20 @@ function active = selectActiveCSSCSamples(state, params)
 
     c = state.clearance(:);
     valid = isfinite(c) & state.validLine(:);
+
+    % In hybrid clearance mode, G/M/N probes are used to select candidate
+    % chords, but active optimization samples should use exact segment
+    % clearance whenever such refined samples exist.
+    if isfield(state, 'paramsUsed') ...
+            && isfield(state.paramsUsed, 'clearanceMode') ...
+            && strcmpi(state.paramsUsed.clearanceMode, 'hybrid') ...
+            && isfield(state, 'isExactSegment')
+        exact = state.isExactSegment(:);
+        if any(valid & exact)
+            valid = valid & exact;
+        end
+    end
+
     idxValid = find(valid);
 
     if isempty(idxValid)

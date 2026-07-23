@@ -2,8 +2,11 @@ function state = evaluateCSSCGlobal(P, obstacles, params)
 %EVALUATECSSCGLOBAL Evaluate CSSC swept-segment clearance globally.
 %
 % This evaluator computes fixed-length chords M=r(u), N=r(v(u)) and then
-% queries segment-obstacle clearance for each valid chord. It also computes
-% optional point clearances for G/M/N for visualization.
+% evaluates clearance according to params.clearanceMode:
+%   'segment'  : exact segment-obstacle clearance for each valid chord.
+%   'envelope' : fast G/M/N point-SDF probe, approximate.
+%   'hybrid'   : G/M/N point-SDF probe plus selective segment refinement.
+% It also keeps optional point clearances for visualization/diagnostics.
 %
 % Timing:
 %   Set params.printEvalTiming = true / false to control printing.
@@ -38,82 +41,43 @@ function state = evaluateCSSCGlobal(P, obstacles, params)
 
     n = numel(env.u);
 
-    %% 3. Allocate arrays
+    %% 3. Clearance backend
     t = tic;
 
-    clearanceSegment = nan(n,1);
-    closestPoint = nan(n,2);
-    closestAlpha = nan(n,1);
-    closestNormal = nan(n,2);
-    nearestObsId = nan(n,1);
-    nearestObsType = strings(n,1);
+    clearanceOut = queryChordClearanceSet2D(env, obstacles, params);
+    validLineMask = clearanceOut.validLineMask;
+    validSegmentMask = clearanceOut.validSegmentMask;
+    idxValidLine = clearanceOut.idxValidLine;
+    idxValidSegment = clearanceOut.idxValidSegment;
 
-    clearanceG = nan(n,1);
-    clearanceM = nan(n,1);
-    clearanceN = nan(n,1);
+    clearance = clearanceOut.clearance;
+    clearanceSegment = clearanceOut.clearanceSegment;
+    clearanceProbe = clearanceOut.clearanceProbe;
+    clearanceG = clearanceOut.clearanceG;
+    clearanceM = clearanceOut.clearanceM;
+    clearanceN = clearanceOut.clearanceN;
+    closestPoint = clearanceOut.closestPoint;
+    closestAlpha = clearanceOut.closestAlpha;
+    closestNormal = clearanceOut.closestNormal;
+    clearanceSource = clearanceOut.clearanceSource;
+    probeSource = clearanceOut.probeSource;
+    isExactSegment = clearanceOut.isExactSegment;
+    nearestObsId = clearanceOut.nearestObsId;
+    nearestObsType = clearanceOut.nearestObsType;
 
-    validLineMask = env.validLine ...
-        & all(isfinite(env.M), 2) ...
-        & all(isfinite(env.N), 2);
+    timeClearanceBackend = toc(t);
+    timeAllocate = max(0, clearanceOut.timing.total ...
+        - clearanceOut.timing.segmentClearance ...
+        - clearanceOut.timing.pointMN ...
+        - clearanceOut.timing.pointG);
+    timeSegmentClearance = clearanceOut.timing.segmentClearance;
+    timePointMN = clearanceOut.timing.pointMN;
+    timePointG = clearanceOut.timing.pointG;
 
-    validSegmentMask = env.validSegment ...
-        & all(isfinite(env.G), 2);
-
-    idxValidLine = find(validLineMask);
-    idxValidSegment = find(validSegmentMask);
-
-    timeAllocate = toc(t);
-
-    %% 4. Segment-obstacle clearance
+    %% 4. Minimum clearance extraction
     t = tic;
 
-    for kk = 1:numel(idxValidLine)
-        i = idxValidLine(kk);
-
-        out = querySegmentObstacleClearance2D( ...
-            env.M(i,:), env.N(i,:), obstacles);
-
-        clearanceSegment(i) = out.clearance;
-        closestPoint(i,:) = out.closestPoint;
-        closestAlpha(i) = out.alpha;
-        closestNormal(i,:) = out.normal;
-        nearestObsId(i) = out.obsId;
-        nearestObsType(i) = string(out.obsType);
-    end
-
-    timeSegmentClearance = toc(t);
-
-    %% 5. M/N endpoint point-SDF clearance
-    t = tic;
-
-    for kk = 1:numel(idxValidLine)
-        i = idxValidLine(kk);
-
-        [dM, ~] = queryObstaclePointSDF2D(env.M(i,:), obstacles);
-        [dN, ~] = queryObstaclePointSDF2D(env.N(i,:), obstacles);
-
-        clearanceM(i) = dM;
-        clearanceN(i) = dN;
-    end
-
-    timePointMN = toc(t);
-
-    %% 6. G envelope point-SDF clearance
-    t = tic;
-
-    for kk = 1:numel(idxValidSegment)
-        i = idxValidSegment(kk);
-
-        [dG, ~] = queryObstaclePointSDF2D(env.G(i,:), obstacles);
-        clearanceG(i) = dG;
-    end
-
-    timePointG = toc(t);
-
-    %% 7. Minimum clearance extraction
-    t = tic;
-
-    [minClear, minIdx] = min(clearanceSegment, [], 'omitnan');
+    [minClear, minIdx] = min(clearance, [], 'omitnan');
 
     if isempty(minClear) || isnan(minClear)
         minClear = nan;
@@ -124,12 +88,12 @@ function state = evaluateCSSCGlobal(P, obstacles, params)
     else
         minU = env.u(minIdx);
         minPoint = closestPoint(minIdx,:);
-        minType = 'segment';
+        minType = char(clearanceSource(minIdx));
     end
 
     timeMin = toc(t);
 
-    %% 8. Path sampling for visualization
+    %% 5. Path sampling for visualization
     t = tic;
 
     if params.enablePathSample
@@ -143,13 +107,14 @@ function state = evaluateCSSCGlobal(P, obstacles, params)
 
     timePathSample = toc(t);
 
-    %% 9. Pack output state
+    %% 6. Pack output state
     t = tic;
 
     state = struct();
     state.P = P;
     state.knot = knot;
     state.env = env;
+    state.clearanceMode = params.clearanceMode;
 
     state.u = env.u;
     state.v = env.v;
@@ -160,11 +125,15 @@ function state = evaluateCSSCGlobal(P, obstacles, params)
     state.validLine = env.validLine;
     state.validSegment = env.validSegment;
 
-    state.clearance = clearanceSegment;
+    state.clearance = clearance;
     state.clearanceSegment = clearanceSegment;
+    state.clearanceProbe = clearanceProbe;
     state.clearanceG = clearanceG;
     state.clearanceM = clearanceM;
     state.clearanceN = clearanceN;
+    state.clearanceSource = clearanceSource;
+    state.probeSource = probeSource;
+    state.isExactSegment = isExactSegment;
 
     state.closestPoint = closestPoint;
     state.closestAlpha = closestAlpha;
@@ -185,7 +154,7 @@ function state = evaluateCSSCGlobal(P, obstacles, params)
 
     timePack = toc(t);
 
-    %% 10. Timing summary
+    %% 7. Timing summary
     timeTotal = toc(tTotal);
 
     timing = struct();
@@ -197,6 +166,8 @@ function state = evaluateCSSCGlobal(P, obstacles, params)
     timing.segmentClearance = timeSegmentClearance;
     timing.pointMN = timePointMN;
     timing.pointG = timePointG;
+    timing.clearanceBackend = timeClearanceBackend;
+    timing.clearanceOther = timeAllocate;
     timing.minExtraction = timeMin;
     timing.pathSample = timePathSample;
     timing.packState = timePack;
@@ -204,6 +175,12 @@ function state = evaluateCSSCGlobal(P, obstacles, params)
     timing.numU = n;
     timing.numValidLine = numel(idxValidLine);
     timing.numValidSegment = numel(idxValidSegment);
+    timing.numExactSegment = clearanceOut.timing.numExactSegment;
+    timing.exactFraction = clearanceOut.timing.exactFraction;
+    timing.numProbe = clearanceOut.timing.numProbe;
+    timing.clearanceMode = params.clearanceMode;
+    timing.hybridTriggerThreshold = clearanceOut.timing.hybridTriggerThreshold;
+    timing.obstacleFilter = clearanceOut.timing.obstacleFilter;
     timing.numObstacles = numel(obstacles);
 
     timing.hasEnvelopeStats = isfield(env, 'stats');
@@ -243,12 +220,60 @@ function params = setDefaultParams(params)
 
     % Timing print switch.
     if ~isfield(params, 'printEvalTiming')
-        params.printEvalTiming = true;
+        params.printEvalTiming = false;
     end
 
     % Path sample can be disabled during optimization for speed.
     if ~isfield(params, 'enablePathSample')
         params.enablePathSample = true;
+    end
+
+    % Point clearance for M/N/G is diagnostic/visualization-only.
+    if ~isfield(params, 'enablePointClearance')
+        params.enablePointClearance = true;
+    end
+
+    % Clearance backend. Segment is the conservative default used by the
+    % proposed optimizer and high-precision evaluator.
+    if ~isfield(params, 'clearanceMode') || isempty(params.clearanceMode)
+        params.clearanceMode = 'segment';
+    end
+    if ~isfield(params, 'hybrid') || isempty(params.hybrid)
+        params.hybrid = struct();
+    end
+    if ~isfield(params.hybrid, 'triggerFactor')
+        params.hybrid.triggerFactor = 2.0;
+    end
+    if ~isfield(params.hybrid, 'refineActiveTopK')
+        params.hybrid.refineActiveTopK = true;
+    end
+    if ~isfield(params.hybrid, 'forceExactStride')
+        params.hybrid.forceExactStride = 0;
+    end
+
+    % Optional bounding-circle broad-phase obstacle filtering.
+    if ~isfield(params, 'obstacleFilter') || isempty(params.obstacleFilter)
+        params.obstacleFilter = struct();
+    end
+    if ~isfield(params.obstacleFilter, 'enable')
+        params.obstacleFilter.enable = false;
+    end
+    if ~isfield(params.obstacleFilter, 'useForSegment')
+        params.obstacleFilter.useForSegment = true;
+    end
+    if ~isfield(params.obstacleFilter, 'useForPoint')
+        params.obstacleFilter.useForPoint = true;
+    end
+    if ~isfield(params.obstacleFilter, 'minCandidates')
+        params.obstacleFilter.minCandidates = 1;
+    end
+    if ~isfield(params.obstacleFilter, 'stopTol')
+        params.obstacleFilter.stopTol = 1e-12;
+    end
+
+    % Nearest obstacle id/type is diagnostic metadata, not needed by the optimizer.
+    if ~isfield(params, 'enableObstacleMetadata')
+        params.enableObstacleMetadata = true;
     end
 
     if ~isfield(params, 'pathSampleN')
@@ -264,6 +289,7 @@ function printEvaluateTiming(timing)
     total = max(timing.total, eps);
 
     fprintf('\n[EVALUATECSSCGLOBAL TIMING]\n');
+    fprintf('  clearance mode           : %s\n', char(timing.clearanceMode));
     fprintf('  total                    : %8.3f ms\n', 1000 * timing.total);
 
     fprintf('  default params           : %8.3f ms  (%5.1f%%)\n', ...
@@ -275,7 +301,7 @@ function printEvaluateTiming(timing)
     fprintf('  fixedChordEnvelope       : %8.3f ms  (%5.1f%%)\n', ...
         1000 * timing.envelope, 100 * timing.envelope / total);
 
-    fprintf('  allocate arrays          : %8.3f ms  (%5.1f%%)\n', ...
+    fprintf('  clearance overhead       : %8.3f ms  (%5.1f%%)\n', ...
         1000 * timing.allocate, 100 * timing.allocate / total);
 
     fprintf('  segment clearance        : %8.3f ms  (%5.1f%%)\n', ...
@@ -301,6 +327,20 @@ function printEvaluateTiming(timing)
 
     fprintf('  validSegment             : %d / %d\n', ...
         timing.numValidSegment, timing.numU);
+
+    fprintf('  exact segment queries    : %d / %d  (%.1f%%)\n', ...
+        timing.numExactSegment, timing.numValidLine, 100 * timing.exactFraction);
+
+    if isfield(timing, 'obstacleFilter') && timing.obstacleFilter.totalObstaclePossible > 0
+        ofs = timing.obstacleFilter;
+        fprintf('  obstacle checks          : %d / %d  (%.1f%%)\n', ...
+            ofs.totalObstacleChecks, ofs.totalObstaclePossible, ...
+            100 * ofs.checkFraction);
+    end
+
+    if strcmpi(timing.clearanceMode, 'hybrid')
+        fprintf('  hybrid trigger threshold : %.6g\n', timing.hybridTriggerThreshold);
+    end
 
     fprintf('  obstacles                : %d\n', timing.numObstacles);
 

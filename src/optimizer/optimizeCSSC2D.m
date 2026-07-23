@@ -29,6 +29,8 @@ function [Popt, info] = optimizeCSSC2D(Pinit, Pref, obstacles, params)
     info.stepNormHist = nan(params.numIter,1);
     info.relStepHist = nan(params.numIter,1);
     info.relImproveHist = nan(params.numIter,1);
+    info.bestJHist = nan(params.numIter,1);
+    info.noImproveCountHist = nan(params.numIter,1);
     info.snapshots = cell(params.numIter,1);
     info.gradMode = params.solver.gradMode;
     info.timing = initTiming(params.numIter);
@@ -36,10 +38,18 @@ function [Popt, info] = optimizeCSSC2D(Pinit, Pref, obstacles, params)
     info.converged = false;
     info.stopIter = params.numIter;
     info.stopReason = 'maxIter';
+    info.bestP = Ptemplate;
+    info.bestJ = inf;
+    info.bestIter = 0;
+    info.bestDetails = [];
+    info.noImproveCount = 0;
+    info.returnedBest = true;
 
     fprintf('[optimizeCSSC2D] gradMode = %s\n', params.solver.gradMode);
 
     iterDone = 0;
+    bestState = initBestState(Ptemplate);
+    noImproveCount = 0;
     for iter = 1:params.numIter
         tIter = tic;
 
@@ -72,6 +82,14 @@ function [Popt, info] = optimizeCSSC2D(Pinit, Pref, obstacles, params)
                 error('Unknown params.solver.gradMode: %s', params.solver.gradMode);
         end
 
+        [bestState, improvedBest] = updateBestState( ...
+            bestState, P, J, details, iter, params.stop.tolBestRel);
+        if improvedBest
+            noImproveCount = 0;
+        else
+            noImproveCount = noImproveCount + 1;
+        end
+
         tUpdate = tic;
         gradNormRaw = norm(G);
         if gradNormRaw > params.gradClip
@@ -97,6 +115,13 @@ function [Popt, info] = optimizeCSSC2D(Pinit, Pref, obstacles, params)
         info.stepNormHist(iter) = stepNorm;
         info.relStepHist(iter) = relStep;
         info.relImproveHist(iter) = computeRelativeImprovement(info.Jhist, iter, params.stop.window);
+        info.bestJHist(iter) = bestState.J;
+        info.noImproveCountHist(iter) = noImproveCount;
+        info.bestP = bestState.P;
+        info.bestJ = bestState.J;
+        info.bestIter = bestState.iter;
+        info.bestDetails = bestState.details;
+        info.noImproveCount = noImproveCount;
 
         if iter == 1 || mod(iter, params.saveInterval) == 0 || iter == params.numIter
             info.snapshots{iter} = unpackInterior(x, Ptemplate);
@@ -138,8 +163,9 @@ function [Popt, info] = optimizeCSSC2D(Pinit, Pref, obstacles, params)
             info.stopIter = iter;
             info.stopReason = stopState.reason;
             info.snapshots{iter} = unpackInterior(x, Ptemplate);
-            fprintf('early stop at iter %d | reason = %s | relImprove = %.3g | gradNorm = %.3g | relStep = %.3g\n', ...
-                iter, info.stopReason, info.relImproveHist(iter), gradNormRaw, relStep);
+            fprintf('early stop at iter %d | reason = %s | relImprove = %.3g | gradNorm = %.3g | relStep = %.3g | noImprove = %d | bestIter = %d | bestJ = %.6g\n', ...
+                iter, info.stopReason, info.relImproveHist(iter), gradNormRaw, ...
+                relStep, noImproveCount, bestState.iter, bestState.J);
             break;
         end
     end
@@ -147,7 +173,17 @@ function [Popt, info] = optimizeCSSC2D(Pinit, Pref, obstacles, params)
     info.numIterActual = iterDone;
     info = trimInfoHistories(info, iterDone, objectiveComponentFields);
 
-    Popt = unpackInterior(x, Ptemplate);
+    if isfinite(bestState.J)
+        Popt = bestState.P;
+    else
+        Popt = unpackInterior(x, Ptemplate);
+        info.returnedBest = false;
+    end
+    info.bestP = bestState.P;
+    info.bestJ = bestState.J;
+    info.bestIter = bestState.iter;
+    info.bestDetails = bestState.details;
+    info.noImproveCount = noImproveCount;
     [info.finalJ, info.finalDetails] = objectiveCSSC2D_Value(Popt, Pref, obstacles, params);
     info.finalMinClear = info.finalDetails.minClear;
 end
@@ -187,11 +223,52 @@ function relImprove = computeRelativeImprovement(Jhist, iter, window)
     end
 end
 
+function bestState = initBestState(Ptemplate)
+    bestState = struct();
+    bestState.P = Ptemplate;
+    bestState.J = inf;
+    bestState.iter = 0;
+    bestState.details = [];
+end
+
+function [bestState, improved] = updateBestState(bestState, P, J, details, iter, tolBestRel)
+    improved = false;
+    if ~isfinite(J)
+        return;
+    end
+
+    if ~isfinite(bestState.J)
+        improved = true;
+    else
+        minImprove = tolBestRel * max(1, abs(bestState.J));
+        improved = (bestState.J - J) > minImprove;
+    end
+
+    if improved
+        bestState.P = P;
+        bestState.J = J;
+        bestState.iter = iter;
+        bestState.details = details;
+    end
+end
+
 function stopState = checkEarlyStop(info, iter, details, gradNorm, relStep, params)
     stopState.shouldStop = false;
     stopState.reason = 'running';
 
     if ~params.stop.enable || iter < params.stop.minIter
+        return;
+    end
+
+    safeEnough = checkStopSafety(details, params);
+    patienceReached = isscalar(params.stop.patience) && ...
+        isfinite(params.stop.patience) && ...
+        params.stop.patience > 0 && ...
+        info.noImproveCount >= params.stop.patience;
+
+    if patienceReached && safeEnough
+        stopState.shouldStop = true;
+        stopState.reason = 'best-patience';
         return;
     end
 
@@ -203,7 +280,6 @@ function stopState = checkEarlyStop(info, iter, details, gradNorm, relStep, para
     convergedJ = relImprove < params.stop.tolRelJ;
     convergedGrad = gradNorm < params.stop.tolGrad;
     convergedStep = relStep < params.stop.tolStep;
-    safeEnough = checkStopSafety(details, params);
 
     if convergedJ && (convergedGrad || convergedStep) && safeEnough
         stopState.shouldStop = true;
@@ -241,6 +317,8 @@ function info = trimInfoHistories(info, nIter, componentFields)
     info.stepNormHist = info.stepNormHist(1:nIter);
     info.relStepHist = info.relStepHist(1:nIter);
     info.relImproveHist = info.relImproveHist(1:nIter);
+    info.bestJHist = info.bestJHist(1:nIter);
+    info.noImproveCountHist = info.noImproveCountHist(1:nIter);
     info.snapshots = info.snapshots(1:nIter);
 
     f = fieldnames(info.timing);
@@ -402,10 +480,18 @@ function params = setDefaultParams(params)
     if ~isfield(params.stop, 'tolRelJ'); params.stop.tolRelJ = 1e-2; end
     if ~isfield(params.stop, 'tolGrad'); params.stop.tolGrad = 1e-1; end
     if ~isfield(params.stop, 'tolStep'); params.stop.tolStep = 1e-3; end
+    if ~isfield(params.stop, 'patience') || isempty(params.stop.patience) || ...
+       ~isscalar(params.stop.patience) || ~isfinite(params.stop.patience)
+        params.stop.patience = 10;
+    end
+    if ~isfield(params.stop, 'tolBestRel') || isempty(params.stop.tolBestRel) || ...
+       ~isscalar(params.stop.tolBestRel) || ~isfinite(params.stop.tolBestRel)
+        params.stop.tolBestRel = 1e-4;
+    end
     if ~isfield(params.stop, 'requireSafe'); params.stop.requireSafe = false; end
     if ~isfield(params.stop, 'clearanceMargin'); params.stop.clearanceMargin = 0.0; end
 
-    if ~isfield(params, 'enableTimingDebug'); params.enableTimingDebug = true; end
+    if ~isfield(params, 'enableTimingDebug'); params.enableTimingDebug = false; end
     if ~isfield(params, 'timingPrintInterval'); params.timingPrintInterval = 10; end
     if ~isfield(params, 'timingPrintWindow'); params.timingPrintWindow = 5; end
 

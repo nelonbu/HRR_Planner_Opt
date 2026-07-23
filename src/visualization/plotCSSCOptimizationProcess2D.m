@@ -198,6 +198,9 @@ function drawObstacles(obstacles, params)
             case {'rect', 'rectangle', 'box'}
                 drawRect(obs.center, obs.halfSize, obs.yaw, [0.2 0.2 0.2], 1.5, '-');
                 drawRect(obs.center, obs.halfSize + params.dMin, obs.yaw, [0.85 0.2 0.2], 0.9, '--');
+
+            case 'polygon'
+                drawPolygon(obs.vertices, [0.2 0.2 0.2], 1.5, '-');
         end
     end
 end
@@ -246,6 +249,13 @@ function drawRect(c, h, yaw, color, lw, style)
         'HandleVisibility','off');
 end
 
+function drawPolygon(vertices, color, lw, style)
+    pts = [vertices; vertices(1,:)];
+    plot(pts(:,1), pts(:,2), ...
+        'Color', color, 'LineWidth', lw, 'LineStyle', style, ...
+        'HandleVisibility','off');
+end
+
 function applyStableAxes(Pseq, obstacles, params)
     pts = [];
     for k = 1:numel(Pseq)
@@ -261,6 +271,8 @@ function applyStableAxes(Pseq, obstacles, params)
             case {'rect', 'rectangle', 'box'}
                 h = obs.halfSize + params.dMin;
                 pts = [pts; obs.center - h; obs.center + h]; %#ok<AGROW>
+            case 'polygon'
+                pts = [pts; obs.vertices]; %#ok<AGROW>
         end
     end
 

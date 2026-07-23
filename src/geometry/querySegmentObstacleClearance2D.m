@@ -1,9 +1,10 @@
-function out = querySegmentObstacleClearance2D(M, N, obstacles)
+function out = querySegmentObstacleClearance2D(M, N, obstacles, enableTiming)
 %QUERYSEGMENTOBSTACLECLEARANCE2D Fast clearance from a line segment to obstacles.
 %
 % Supported obstacle types:
 %   circle : analytic segment-circle distance
 %   rect   : fast candidate-based segment-rotated-rectangle SDF minimum
+%   polygon: generic sampled SDF fallback
 %
 % Output:
 %   out.clearance     : obstacle signed distance
@@ -14,10 +15,24 @@ function out = querySegmentObstacleClearance2D(M, N, obstacles)
 %   out.obsType       : nearest obstacle type
 %   out.rawDistance   : same signed distance as clearance
 
+    if nargin < 4
+        enableTiming = false;
+    end
+
+    if enableTiming
+        tTotal = tic;
+        t = tic;
+        timing = emptyTiming();
+    end
+
     M = M(:).';
     N = N(:).';
     e = N - M;
     len2 = dot(e, e);
+
+    if enableTiming
+        timing.setup = timing.setup + toc(t);
+    end
 
     bestClearance = inf;
     bestQ = M;
@@ -28,19 +43,51 @@ function out = querySegmentObstacleClearance2D(M, N, obstacles)
     bestRawD = inf;
 
     for k = 1:numel(obstacles)
+        if enableTiming
+            t = tic;
+        end
         obs = obstacles(k);
         type = lower(obs.type);
+        if enableTiming
+            timing.typeDispatch = timing.typeDispatch + toc(t);
+        end
 
         switch type
             case 'circle'
+                if enableTiming
+                    t = tic;
+                end
                 [rawD, q, alpha, normal] = segmentCircleFast(M, e, len2, obs);
+                if enableTiming
+                    timing.circle = timing.circle + toc(t);
+                    timing.nCircle = timing.nCircle + 1;
+                end
 
             case {'rect', 'rectangle', 'box'}
-                [rawD, q, alpha, normal] = segmentRectFast(M, e, len2, obs);
+                if enableTiming
+                    [rawD, q, alpha, normal, rectTiming] = segmentRectFast(M, e, len2, obs, true);
+                    timing.rect = timing.rect + rectTiming.total;
+                    timing.rectSetup = timing.rectSetup + rectTiming.setup;
+                    timing.rectCandidates = timing.rectCandidates + rectTiming.candidates;
+                    timing.rectFilterUnique = timing.rectFilterUnique + rectTiming.filterUnique;
+                    timing.rectSDFLoop = timing.rectSDFLoop + rectTiming.sdfLoop;
+                    timing.rectFinalize = timing.rectFinalize + rectTiming.finalize;
+                    timing.nRect = timing.nRect + 1;
+                    timing.nRectCandidates = timing.nRectCandidates + rectTiming.numCandidates;
+                else
+                    [rawD, q, alpha, normal] = segmentRectFast(M, e, len2, obs, false);
+                end
 
             otherwise
                 % Fast generic fallback: no fminbnd.
+                if enableTiming
+                    t = tic;
+                end
                 [rawD, q, alpha, normal] = segmentSDFSampleFast(M, e, len2, obs);
+                if enableTiming
+                    timing.generic = timing.generic + toc(t);
+                    timing.nGeneric = timing.nGeneric + 1;
+                end
         end
 
         clearance = rawD;
@@ -56,6 +103,10 @@ function out = querySegmentObstacleClearance2D(M, N, obstacles)
         end
     end
 
+    if enableTiming
+        t = tic;
+    end
+
     out = struct();
     out.clearance = bestClearance;
     out.closestPoint = bestQ;
@@ -64,6 +115,12 @@ function out = querySegmentObstacleClearance2D(M, N, obstacles)
     out.obsId = bestObsId;
     out.obsType = bestObsType;
     out.rawDistance = bestRawD;
+
+    if enableTiming
+        timing.outputPack = timing.outputPack + toc(t);
+        timing.total = toc(tTotal);
+        out.timing = timing;
+    end
 end
 
 %% ============================================================
@@ -98,7 +155,19 @@ end
 % Rotated rectangle: fast candidate-based SDF minimum
 %% ============================================================
 
-function [rawD, qWorld, alphaBest, normalWorld] = segmentRectFast(M, e, len2, obs)
+function [rawD, qWorld, alphaBest, normalWorld, timing] = segmentRectFast(M, e, len2, obs, enableTiming)
+    if nargin < 5
+        enableTiming = false;
+    end
+
+    if enableTiming
+        tTotal = tic;
+        t = tic;
+        timing = emptyRectTiming();
+    else
+        timing = [];
+    end
+
     c = obs.center(:).';
     h = obs.halfSize(:).';
 
@@ -108,33 +177,70 @@ function [rawD, qWorld, alphaBest, normalWorld] = segmentRectFast(M, e, len2, ob
         yaw = 0;
     end
 
-    cy = cos(yaw);
-    sy = sin(yaw);
+    isAxisAligned = abs(yaw) < 1e-14;
+    if isAxisAligned
+        R = [];
+        ML = M - c;
+        eL = e;
+    else
+        cy = cos(yaw);
+        sy = sin(yaw);
 
-    R = [cy, -sy;
-         sy,  cy];
+        R = [cy, -sy;
+             sy,  cy];
 
-    % World -> local
-    ML = (R' * (M - c).').';
-    eL = (R' * e.').';
+        % World -> local
+        ML = (R' * (M - c).').';
+        eL = (R' * e.').';
+    end
+
+    if enableTiming
+        timing.setup = timing.setup + toc(t);
+    end
 
     if len2 < 1e-14
+        if enableTiming
+            t = tic;
+        end
         alphaBest = 0;
         qLocal = ML;
         [rawD, normalLocal] = rectSDFLocal(qLocal, h);
         qWorld = M;
-        normalWorld = (R * normalLocal.').';
+        if isAxisAligned
+            normalWorld = normalLocal;
+        else
+            normalWorld = (R * normalLocal.').';
+        end
+        if enableTiming
+            timing.sdfLoop = timing.sdfLoop + toc(t);
+            timing.numCandidates = 1;
+            timing.total = toc(tTotal);
+        end
         return;
     end
 
+    if enableTiming
+        t = tic;
+    end
     alphaList = rectCandidateAlphas(ML, eL, h);
+    if enableTiming
+        timing.candidates = timing.candidates + toc(t);
+        t = tic;
+    end
     alphaList = alphaList(alphaList >= 0 & alphaList <= 1 & isfinite(alphaList));
-    alphaList = unique(round(alphaList * 1e12) / 1e12);
+    alphaList = uniqueSmallAlpha(alphaList, 1e-12);
+    if enableTiming
+        timing.filterUnique = timing.filterUnique + toc(t);
+        timing.numCandidates = numel(alphaList);
+    end
 
     bestD = inf;
     alphaBest = 0;
     normalLocalBest = [1, 0];
 
+    if enableTiming
+        t = tic;
+    end
     for i = 1:numel(alphaList)
         a = alphaList(i);
         qLocal = ML + a * eL;
@@ -147,16 +253,29 @@ function [rawD, qWorld, alphaBest, normalWorld] = segmentRectFast(M, e, len2, ob
             normalLocalBest = nLocal;
         end
     end
+    if enableTiming
+        timing.sdfLoop = timing.sdfLoop + toc(t);
+        t = tic;
+    end
 
     rawD = bestD;
     qWorld = M + alphaBest * e;
-    normalWorld = (R * normalLocalBest.').';
+    if isAxisAligned
+        normalWorld = normalLocalBest;
+    else
+        normalWorld = (R * normalLocalBest.').';
+    end
 
     nrm = norm(normalWorld);
     if nrm < 1e-12
         normalWorld = [1, 0];
     else
         normalWorld = normalWorld / nrm;
+    end
+
+    if enableTiming
+        timing.finalize = timing.finalize + toc(t);
+        timing.total = toc(tTotal);
     end
 end
 
@@ -278,6 +397,18 @@ function [d, g] = rectSDFLocal(q, h)
     end
 end
 
+function out = uniqueSmallAlpha(alphaList, tol)
+    % Lighter than round+unique for the tiny candidate arrays used here.
+    if isempty(alphaList)
+        out = alphaList;
+        return;
+    end
+
+    alphaList = sort(alphaList);
+    keep = [true, abs(diff(alphaList)) > tol];
+    out = alphaList(keep);
+end
+
 %% ============================================================
 % Generic fallback for unknown SDF obstacles
 %% ============================================================
@@ -334,4 +465,33 @@ end
 function s = signNonzero(x)
     s = ones(size(x));
     s(x < 0) = -1;
+end
+
+function timing = emptyTiming()
+    timing.total = 0;
+    timing.setup = 0;
+    timing.typeDispatch = 0;
+    timing.circle = 0;
+    timing.rect = 0;
+    timing.rectSetup = 0;
+    timing.rectCandidates = 0;
+    timing.rectFilterUnique = 0;
+    timing.rectSDFLoop = 0;
+    timing.rectFinalize = 0;
+    timing.generic = 0;
+    timing.outputPack = 0;
+    timing.nCircle = 0;
+    timing.nRect = 0;
+    timing.nGeneric = 0;
+    timing.nRectCandidates = 0;
+end
+
+function timing = emptyRectTiming()
+    timing.total = 0;
+    timing.setup = 0;
+    timing.candidates = 0;
+    timing.filterUnique = 0;
+    timing.sdfLoop = 0;
+    timing.finalize = 0;
+    timing.numCandidates = 0;
 end

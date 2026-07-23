@@ -3,7 +3,7 @@ function [d, grad, info] = queryObstaclePointSDF2D(q, obstacles)
 %
 % Inputs:
 %   q         : 1-by-2 query point
-%   obstacles : struct array. Supported types: 'circle', 'rect'
+%   obstacles : struct array. Supported types: circle, rect, polygon
 %
 % Outputs:
 %   d     : signed distance to nearest obstacle boundary. Positive outside.
@@ -24,6 +24,8 @@ function [d, grad, info] = queryObstaclePointSDF2D(q, obstacles)
                 [dk, gk] = sdfCircle2D(q, obs.center, obs.radius);
             case 'rect'
                 [dk, gk] = sdfRect2D(q, obs.center, obs.halfSize, obs.yaw);
+            case 'polygon'
+                [dk, gk] = sdfPolygon2D(q, obs.vertices);
             otherwise
                 error('Unsupported obstacle type: %s', obs.type);
         end
@@ -83,5 +85,46 @@ function s = signNonzero(x)
         s = 1;
     else
         s = -1;
+    end
+end
+
+function [d, g] = sdfPolygon2D(q, vertices)
+    n = size(vertices, 1);
+    inside = inpolygon(q(1), q(2), vertices(:,1), vertices(:,2));
+
+    bestDist = inf;
+    bestClosest = vertices(1,:);
+
+    for i = 1:n
+        a = vertices(i,:);
+        b = vertices(mod(i, n) + 1,:);
+        e = b - a;
+        len2 = dot(e, e);
+        if len2 < 1e-14
+            t = 0;
+        else
+            t = max(0, min(1, dot(q - a, e) / len2));
+        end
+        c = a + t * e;
+        dist = norm(q - c);
+        if dist < bestDist
+            bestDist = dist;
+            bestClosest = c;
+        end
+    end
+
+    if bestDist < 1e-12
+        dir = q - mean(vertices, 1);
+        if norm(dir) < 1e-12
+            dir = [1, 0];
+        end
+        g = dir / norm(dir);
+        d = 0;
+    elseif inside
+        d = -bestDist;
+        g = (bestClosest - q) / bestDist;
+    else
+        d = bestDist;
+        g = (q - bestClosest) / bestDist;
     end
 end
