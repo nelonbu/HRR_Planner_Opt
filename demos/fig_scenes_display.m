@@ -13,46 +13,9 @@ catch
     addpath(genpath(fullfile(projectRoot, 'src')));
 end
 
-%% Key scene and difficulty parameters (edit this block)
-cfg.bounds = [0, 1; -0.4, 0.4];
-cfg.startPt = [0.05, 0.00];
-cfg.goalPt = [0.95, 0.00];
-cfg.dMin = 0.02;                    % Required full-body clearance.
-cfg.difficultyNames = {'Easy', 'Normal', 'Hard'};
-
-% Row 1: double slit. Smaller dGap means higher difficulty.
-cfg.doubleSlit.dGap = [0.16, 0.12, 0.08];
-cfg.doubleSlit.xWalls = [0.32, 0.68];
-cfg.doubleSlit.centerRange = [-0.1, 0.1; -0.2, 0.2; -0.3, 0.3];
-cfg.doubleSlit.seed = [1301, 1308, 1308];
-cfg.doubleSlit.wallThickness = 0.08;
-
-% Row 2: S channel. Smaller dGap means higher difficulty.
-cfg.sChannel.dGap = [0.16, 0.12, 0.08];
-cfg.sChannel.W = 0.70;
-cfg.sChannel.H = diff(cfg.bounds(2,:));
-cfg.sChannel.seed = [1789, 1593, 1791]; % Independent geometry at each level.
-cfg.sChannel.yInOutRange = [-0.20, 0.20];
-
-% Row 3: baffles. passageWidth is the free vertical distance between each
-% baffle tip and the opposite workspace boundary.
-cfg.baffles.passageWidth = [0.40, 0.36, 0.32];
-cfg.baffles.xCenters = [0.25, 0.50, 0.75];
-cfg.baffles.thickness = 0.05;
-cfg.baffles.pattern = [1, -1, 1];   % 1: attached to top; -1: attached to bottom.
-
-% Row 4: random mixed obstacles. Counts and minGap jointly control density.
-cfg.randomMixed.nCircle = [5, 8, 12];
-cfg.randomMixed.nRect = [4, 6, 9];
-cfg.randomMixed.minGap = [0.035, 0.020, 0.008];
-cfg.randomMixed.seed = [2401, 2402, 2403];
-cfg.randomMixed.radiusRange = [0.022, 0.045];
-cfg.randomMixed.halfSizeXRange = [0.022, 0.052];
-cfg.randomMixed.halfSizeYRange = [0.025, 0.060];
-cfg.randomMixed.yawRange = [-pi/4, pi/4];
-cfg.randomMixed.keepoutStart = 0.07;
-cfg.randomMixed.keepoutGoal = 0.07;
-cfg.randomMixed.maxTry = 10000;
+%% Shared scene and difficulty parameters
+% Edit demos/getCSSCDemoConfig2D.m to update all common benchmark demos.
+cfg = getCSSCDemoConfig2D();
 
 % Figure output.
 cfg.figureSizeCm = [11.0, 13.5];
@@ -125,7 +88,9 @@ function scene = makeDoubleSlitScene(cfg, level)
     opts.xWalls = cfg.doubleSlit.xWalls;
     opts.gapHeight = cfg.doubleSlit.dGap(level);
     opts.wallThickness = cfg.doubleSlit.wallThickness;
-    opts.seed = cfg.doubleSlit.seed(level);
+    % Formal runs reuse the same per-family seed sequence across difficulty
+    % levels; show the first trial of each level.
+    opts.seed = cfg.envSeedBaseByFamily(1);
     opts.gapCentersY = sampleDoubleSlitCenters( ...
         cfg.doubleSlit.centerRange(level,:), cfg.bounds, ...
         opts.gapHeight, opts.seed);
@@ -163,7 +128,7 @@ function scene = makeSChannelScene(cfg, level)
     opts.dGap = cfg.sChannel.dGap(level);
     opts.W = cfg.sChannel.W;
     opts.H = cfg.sChannel.H;
-    opts.seed = cfg.sChannel.seed(level);
+    opts.seed = cfg.envSeedBaseByFamily(2);
     opts.yInOutRange = cfg.sChannel.yInOutRange;
 
     [obstacles, envInfo] = generateCSSCStructuredEnvironment2D( ...
@@ -222,7 +187,7 @@ end
 
 function scene = makeRandomMixedScene(cfg, level)
     opts = commonOpts(cfg);
-    opts.seed = cfg.randomMixed.seed(level);
+    opts.seed = cfg.envSeedBaseByFamily(4);
     opts.nCircle = cfg.randomMixed.nCircle(level);
     opts.nRect = cfg.randomMixed.nRect(level);
     opts.minGap = cfg.randomMixed.minGap(level);
@@ -292,7 +257,8 @@ function drawBenchmarkScene(ax, scene, cfg, row, level)
     else
         metricText = sprintf('$%s=%.3f$', scene.metricName, scene.metricValue);
     end
-    title(ax, sprintf('%s: %s', cfg.difficultyNames{level}, metricText), ...
+    title(ax, sprintf('%s: %s', ...
+        char(cfg.difficultyNames(level)), metricText), ...
         'Interpreter', 'latex', 'FontSize', 9, 'FontWeight', 'normal');
 
     if level == 1

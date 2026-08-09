@@ -130,7 +130,7 @@ end
 %% Configuration and scene generation
 
 function cfg = makeConfig(projectRoot)
-    cfg = struct();
+    cfg = getCSSCDemoConfig2D();
     cfg.projectRoot = projectRoot;
     cfg.runName = ['run_clearance_modes_batch_' datestr(now, 'yyyymmdd_HHMMSS')];
     cfg.outDir = fullfile(projectRoot, 'results', 'runs', cfg.runName);
@@ -150,14 +150,6 @@ function cfg = makeConfig(projectRoot)
         'randomRects', ...
         'randomMixed'};
 
-    cfg.bounds = [0, 1; -0.4, 0.4];
-    cfg.startPt = [0.05, 0.0];
-    cfg.goalPt = [0.95, 0.0];
-
-    cfg.L = 0.15;
-    cfg.dMin = 0.02;
-    cfg.dPref = 0.03;
-    cfg.degree = 3;
     cfg.nU = 180;
     cfg.pathSampleN = 500;
     cfg.activeTopK = 10;
@@ -167,7 +159,6 @@ function cfg = makeConfig(projectRoot)
     cfg.hybridRefineActiveTopK = true;
     cfg.hybridForceExactStride = 0;
 
-    cfg.figureResolution = 300;
 end
 
 function [obstacles, envInfo, P, params] = makeSceneCase(cfg, sceneType, seed)

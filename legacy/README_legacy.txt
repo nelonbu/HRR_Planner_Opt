@@ -5,9 +5,8 @@ temporary experiment drivers. They are preserved for reference but are not
 part of the stable v1 experiment interface.
 
 Stable entry scripts are kept in demos/:
-  run_demo_cssc2d.m
-  demo1_scenes_display.m
-  demo2_baseline_compare.m
+  simu1_baseline_compare.m
+  demo3_robot_following_simulation2d.m
 
 Current stable core modules are under src/. New pilot experiments should
 use evaluateCSSCHighPrecision for final statistics and save comparable

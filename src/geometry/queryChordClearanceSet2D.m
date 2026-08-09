@@ -18,12 +18,10 @@ function out = queryChordClearanceSet2D(env, obstacles, params)
 
     tTotal = tic;
 
+    mode = lower(string(params.clearanceMode));
+    [MQuery, NQuery, vQuery, validLineMask, validSegmentMask, ...
+        validitySource] = selectQueryGeometry(env, mode);
     n = numel(env.u);
-    validLineMask = env.validLine ...
-        & all(isfinite(env.M), 2) ...
-        & all(isfinite(env.N), 2);
-    validSegmentMask = env.validSegment ...
-        & all(isfinite(env.G), 2);
 
     idxValidLine = find(validLineMask);
     idxValidSegment = find(validSegmentMask);
@@ -67,8 +65,6 @@ function out = queryChordClearanceSet2D(env, obstacles, params)
     timeProbeG = 0;
     timeSegment = 0;
 
-    mode = lower(string(params.clearanceMode));
-
     needProbe = params.enablePointClearance ...
         || mode == "envelope" ...
         || mode == "hybrid";
@@ -80,14 +76,14 @@ function out = queryChordClearanceSet2D(env, obstacles, params)
 
             if useObstacleFilter && params.obstacleFilter.useForPoint
                 [dM, gM, infoM, fsM] = queryObstaclePointSDFFiltered2D( ...
-                    env.M(i,:), obstacles, obstacleBounds, params.obstacleFilter);
+                    MQuery(i,:), obstacles, obstacleBounds, params.obstacleFilter);
                 [dN, gN, infoN, fsN] = queryObstaclePointSDFFiltered2D( ...
-                    env.N(i,:), obstacles, obstacleBounds, params.obstacleFilter);
+                    NQuery(i,:), obstacles, obstacleBounds, params.obstacleFilter);
                 filterStats = addPointFilterStats(filterStats, fsM);
                 filterStats = addPointFilterStats(filterStats, fsN);
             else
-                [dM, gM, infoM] = queryObstaclePointSDF2D(env.M(i,:), obstacles);
-                [dN, gN, infoN] = queryObstaclePointSDF2D(env.N(i,:), obstacles);
+                [dM, gM, infoM] = queryObstaclePointSDF2D(MQuery(i,:), obstacles);
+                [dN, gN, infoN] = queryObstaclePointSDF2D(NQuery(i,:), obstacles);
                 filterStats.pointQueries = filterStats.pointQueries + 2;
                 filterStats.pointObstacleChecks = filterStats.pointObstacleChecks + 2*nObs;
                 filterStats.pointObstaclePossible = filterStats.pointObstaclePossible + 2*nObs;
@@ -99,7 +95,7 @@ function out = queryChordClearanceSet2D(env, obstacles, params)
             [bestD, which] = min([dM, dN]);
             if which == 1
                 clearanceProbe(i) = bestD;
-                probePoint(i,:) = env.M(i,:);
+                probePoint(i,:) = MQuery(i,:);
                 probeAlpha(i) = 0;
                 probeNormal(i,:) = gM;
                 probeSource(i) = "M";
@@ -109,7 +105,7 @@ function out = queryChordClearanceSet2D(env, obstacles, params)
                 end
             else
                 clearanceProbe(i) = bestD;
-                probePoint(i,:) = env.N(i,:);
+                probePoint(i,:) = NQuery(i,:);
                 probeAlpha(i) = 1;
                 probeNormal(i,:) = gN;
                 probeSource(i) = "N";
@@ -175,12 +171,12 @@ function out = queryChordClearanceSet2D(env, obstacles, params)
 
             if useObstacleFilter && params.obstacleFilter.useForSegment
                 [outSeg, fsSeg] = querySegmentObstacleClearanceFiltered2D( ...
-                    env.M(i,:), env.N(i,:), obstacles, obstacleBounds, ...
+                    MQuery(i,:), NQuery(i,:), obstacles, obstacleBounds, ...
                     params.obstacleFilter);
                 filterStats = addSegmentFilterStats(filterStats, fsSeg);
             else
                 outSeg = querySegmentObstacleClearance2D( ...
-                    env.M(i,:), env.N(i,:), obstacles);
+                    MQuery(i,:), NQuery(i,:), obstacles);
                 filterStats.segmentQueries = filterStats.segmentQueries + 1;
                 filterStats.segmentObstacleChecks = filterStats.segmentObstacleChecks + nObs;
                 filterStats.segmentObstaclePossible = filterStats.segmentObstaclePossible + nObs;
@@ -228,6 +224,10 @@ function out = queryChordClearanceSet2D(env, obstacles, params)
     out.validSegmentMask = validSegmentMask;
     out.idxValidLine = idxValidLine;
     out.idxValidSegment = idxValidSegment;
+    out.MUsed = MQuery;
+    out.NUsed = NQuery;
+    out.vUsed = vQuery;
+    out.validitySource = validitySource;
     out.nearestObsId = nearestObsId;
     out.nearestObsType = nearestObsType;
 
@@ -249,6 +249,54 @@ function out = queryChordClearanceSet2D(env, obstacles, params)
     end
     timing.obstacleFilter = filterStats;
     out.timing = timing;
+end
+
+function [M, N, v, validLineMask, validSegmentMask, source] = ...
+        selectQueryGeometry(env, mode)
+    M = env.M;
+
+    switch mode
+        case "segment"
+            % Exact segment clearance depends only on a successfully
+            % constructed length-L chord. The differential envelope point G
+            % may be undefined on straight or locally parallel chord
+            % families and must not invalidate the physical segment.
+            if isfield(env, 'validChord') && isfield(env, 'NChord')
+                N = env.NChord;
+                validLineMask = logical(env.validChord);
+                source = 'validChord';
+                if isfield(env, 'vChord')
+                    v = env.vChord;
+                else
+                    v = env.v;
+                end
+            else
+                % Compatibility fallback for legacy envelope structures.
+                N = env.N;
+                v = env.v;
+                validLineMask = logical(env.validLine);
+                source = 'validLine-legacy';
+            end
+            validSegmentMask = false(size(validLineMask));
+
+        case {"envelope", "hybrid"}
+            N = env.N;
+            v = env.v;
+            validLineMask = logical(env.validLine);
+            validSegmentMask = logical(env.validSegment);
+            source = 'validLine';
+
+        otherwise
+            error('Unknown params.clearanceMode: %s', char(mode));
+    end
+
+    validLineMask = validLineMask ...
+        & all(isfinite(M), 2) ...
+        & all(isfinite(N), 2) ...
+        & isfinite(v);
+    validSegmentMask = validSegmentMask ...
+        & all(isfinite(env.G), 2) ...
+        & isfinite(env.lambda);
 end
 
 function params = setDefaults(params)

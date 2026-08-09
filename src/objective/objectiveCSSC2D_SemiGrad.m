@@ -81,6 +81,10 @@ function [J, details, gradP] = objectiveCSSC2D_SemiGrad(P, Pref, obstacles, para
         Jobs = Jobs / nActive;
         Jclear = Jclear / nActive;
         gradP = gradP / nActive;
+    else
+        invalidPenalty = getInvalidClearancePenalty(params);
+        Jobs = invalidPenalty;
+        Jclear = invalidPenalty;
     end
 
     dtObs = toc(tObs);
@@ -114,4 +118,15 @@ function [J, details, gradP] = objectiveCSSC2D_SemiGrad(P, Pref, obstacles, para
     details.active = active;
     details.gradNorm = norm(gradP(:));
     details.timing = struct('total', dtAll, 'evaluate', dtEval, 'obstacleGrad', dtObs, 'regularization', dtReg, 'other', max(0, dtAll-dtEval-dtObs-dtReg));
+end
+
+function value = getInvalidClearancePenalty(params)
+    if isfield(params, 'invalidClearancePenalty') && ...
+            isscalar(params.invalidClearancePenalty) && ...
+            isfinite(params.invalidClearancePenalty) && ...
+            params.invalidClearancePenalty >= 0
+        value = params.invalidClearancePenalty;
+    else
+        value = 1e6;
+    end
 end

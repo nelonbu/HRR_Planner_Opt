@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Editor version="1.0">
+   <File absPath="C:\Users\User\Desktop\运动规划-最优化\解析法" lastWrittenTime="1709886864568" name="Point2CurveDevCalc.m">
+      <CodeFolds version="1.0"/>
+   </File>
+   <File absPath="C:\Users\User\Desktop\运动规划-最优化\解析法" lastWrittenTime="1709886845324" name="Line2CurveDevCalc.m">
+      <CodeFolds version="1.0"/>
+   </File>
+   <File absPath="H:\运动规划-最优化\解析法" lastWrittenTime="1709812163349" name="oneMoment_Arm2Curve.m">
+      <CodeFolds version="1.0"/>
+   </File>
+   <File absPath="H:\运动规划-最优化\解析法" lastWrittenTime="1709812137212" name="Line2CurveDevOptimization.m">
+      <CodeFolds version="1.0"/>
+   </File>
+   <File absPath="H:\运动规划-最优化\解析法" lastWrittenTime="1709793025164" name="Visualization.m">
+      <CodeFolds version="1.0"/>
+   </File>
+   <File absPath="H:\运动规划-最优化\解析法" lastWrittenTime="1709792786462" name="Moments_Arm2Curve.m">
+      <CodeFolds version="1.0"/>
+   </File>
+   <File absPath="H:\运动规划-最优化\解析法" lastWrittenTime="1709792525594" name="visualization.m">
+      <CodeFolds version="1.0"/>
+   </File>
+   <File absPath="H:\运动规划-最优化\解析法" lastWrittenTime="1709705298692" name="Line2CurveDevCalc.m">
+      <CodeFolds version="1.0"/>
+   </File>
+   <File absPath="H:\运动规划-最优化\解析法" lastWrittenTime="1709642697235" name="Line2CurveDevVectorFind.m">
+      <CodeFolds version="1.0"/>
+   </File>
+   <File absPath="H:\运动规划-最优化\解析法" lastWrittenTime="1709642212944" name="Point2CurveDevCalc.m">
+      <CodeFolds version="1.0"/>
+   </File>
+   <File absPath="H:\运动规划-最优化\解析法" lastWrittenTime="1709627911835" name="Arm2CurveDevOptimization.m">
+      <CodeFolds version="1.0"/>
+   </File>
+   <File absPath="H:\运动规划-最优化\解析法" lastWrittenTime="1709520547776" name="Arm2CurveDev_ObjectiveFunc.m">
+      <CodeFolds version="1.0"/>
+   </File>
+   <File absPath="H:\运动规划-最优化\解析法" lastWrittenTime="1709214232183" name="Arm2CurveDevCalc.m">
+      <CodeFolds version="1.0"/>
+   </File>
+   <File absPath="H:\运动规划-最优化\解析法" lastWrittenTime="1709124887217" name="jointPos2Angle.m">
+      <CodeFolds version="1.0"/>
+   </File>
+   <File absPath="H:\运动规划-最优化\解析法" lastWrittenTime="1709122399947" name="jointPosition2Angle.m">
+      <CodeFolds version="1.0"/>
+   </File>
+   <File absPath="H:\运动规划-最优化\解析法" lastWrittenTime="1709119111866" name="line2curveDevOptimization.m">
+      <CodeFolds version="1.0"/>
+   </File>
+   <File absPath="H:\运动规划-最优化\解析法" lastWrittenTime="1709119076101" name="line2curveDevVectorFind.m">
+      <CodeFolds version="1.0"/>
+   </File>
+   <File absPath="H:\运动规划-最优化\解析法" lastWrittenTime="1709118945460" name="line2curveDevCalc.m">
+      <CodeFolds version="1.0"/>
+   </File>
+   <File absPath="H:\运动规划-最优化\解析法" lastWrittenTime="1709031053315" name="line2curveDevOptim.m">
+      <CodeFolds version="1.0"/>
+   </File>
+   <File absPath="H:\运动规划-最优化\解析法" lastWrittenTime="1709020466316" name="line2curveDevCalc_ReturnVector.m">
+      <CodeFolds version="1.0"/>
+   </File>
+   <File absPath="H:\运动规划-最优化\解析法" lastWrittenTime="1709012251097" name="lineSegment2curveDevCalc.m">
+      <CodeFolds version="1.0"/>
+   </File>
+   <File absPath="H:\运动规划-最优化\解析法" lastWrittenTime="1708583058863" name="drawHRManipulatorSimple.m">
+      <CodeFolds version="1.0"/>
+   </File>
+   <File absPath="H:\运动规划-最优化\解析法" lastWrittenTime="1708579680383" name="ang2JointPos.m">
+      <CodeFolds version="1.0"/>
+   </File>
+   <File absPath="H:\运动规划-最优化\解析法" lastWrittenTime="1708505419387" name="polyline2curve.m">
+      <CodeFolds version="1.0"/>
+   </File>
+   <File absPath="H:\运动规划-最优化\解析法" lastWrittenTime="1706784017263" name="polyline2curveDevCalc.m">
+      <CodeFolds version="1.0"/>
+   </File>
+   <File absPath="H:\运动规划-最优化\解析法" lastWrittenTime="1706783336272" name="devCalc.m">
+      <CodeFolds version="1.0"/>
+   </File>
+   <File absPath="H:\运动规划-最优化\解析法" lastWrittenTime="1706783032673" name="jointPos2dev.m">
+      <CodeFolds version="1.0"/>
+   </File>
+   <File absPath="H:\运动规划-最优化\解析法" lastWrittenTime="1706781506899" name="ang2points.m">
+      <CodeFolds version="1.0"/>
+   </File>
+   <File absPath="H:\运动规划-最优化\解析法" lastWrittenTime="1706780344105" name="angles2points.m">
+      <CodeFolds version="1.0"/>
+   </File>
+   <File absPath="H:\运动规划-最优化\解析法" lastWrittenTime="1706694158583" name="test_line2curve.m">
+      <CodeFolds version="1.0"/>
+   </File>
+   <File absPath="H:\运动规划-最优化\解析法" lastWrittenTime="1706509805321" name="line2curve.m">
+      <CodeFolds version="1.0"/>
+   </File>
+   <File absPath="H:\运动规划-最优化\解析法" lastWrittenTime="1705993421773" name="lineSegment2curve.m">
+      <CodeFolds version="1.0"/>
+   </File>
+   <File absPath="H:\运动规划-最优化\解析法" lastWrittenTime="1705985690591" name="lineSeg2curveDevCalc.m">
+      <CodeFolds version="1.0"/>
+   </File>
+   <File absPath="H:\运动规划-最优化\解析法" lastWrittenTime="1705914436648" name="point2curve.m">
+      <CodeFolds version="1.0"/>
+   </File>
+   <File absPath="H:\运动规划-最优化\解析法" lastWrittenTime="1705655190440" name="traj_generate.m">
+      <CodeFolds version="1.0"/>
+   </File>
+   <File absPath="H:\运动规划-最优化\解析法" lastWrittenTime="1705309070606" name="draw.m">
+      <CodeFolds version="1.0"/>
+   </File>
+   <File absPath="H:\运动规划-最优化\minvo-master\minvo-master\src" lastWrittenTime="1705308110903" name="curve_given3D.m">
+      <CodeFolds version="1.0"/>
+   </File>
+   <File absPath="H:\运动规划-最优化\解析法" lastWrittenTime="1705305394013" name="untitled5.m">
+      <CodeFolds version="1.0"/>
+   </File>
+   <File absPath="H:\运动规划-最优化\解析法" lastWrittenTime="1705303678964" name="bSplineFunction.m">
+      <CodeFolds version="1.0"/>
+   </File>
+   <File absPath="H:\运动规划-最优化\解析法" lastWrittenTime="1705303085040" name="DrawSpline.m">
+      <CodeFolds version="1.0"/>
+   </File>
+   <File absPath="H:\运动规划-最优化\解析法" lastWrittenTime="1705301856110" name="BaseFunction.m">
+      <CodeFolds version="1.0"/>
+   </File>
+   <File absPath="H:\运动规划-最优化\解析法" lastWrittenTime="1705301518528" name="U_quasi_uniform.m">
+      <CodeFolds version="1.0"/>
+   </File>
+   <File absPath="H:\运动规划-最优化\解析法" lastWrittenTime="1704446488986" name="arc2D_Simple.m">
+      <CodeFolds version="1.0"/>
+   </File>
+   <File absPath="H:\运动规划-最优化\results3" lastWrittenTime="1703691320390" name="draw1.m">
+      <CodeFolds version="1.0"/>
+   </File>
+   <File absPath="H:\运动规划-最优化" lastWrittenTime="1703691095360" name="verifyOf_maxDevCalc2_good.m">
+      <CodeFolds version="1.0"/>
+   </File>
+   <File absPath="H:\运动规划-最优化" lastWrittenTime="1703691030342" name="calc_dev.m">
+      <CodeFolds version="1.0"/>
+   </File>
+   <File absPath="H:\运动规划-最优化" lastWrittenTime="1703687368891" name="optimization_body_in.m">
+      <CodeFolds version="1.0"/>
+   </File>
+   <File absPath="H:\运动规划-最优化" lastWrittenTime="1703675900258" name="opt_ga.m">
+      <CodeFolds version="1.0"/>
+   </File>
+   <File absPath="H:\运动规划-最优化" lastWrittenTime="1703583807022" name="opt_pso.m">
+      <CodeFolds version="1.0"/>
+   </File>
+   <File absPath="H:\运动规划-最优化" lastWrittenTime="1703516310419" name="verifyOf_oneMoment_result.m">
+      <CodeFolds version="1.0"/>
+   </File>
+</Editor>

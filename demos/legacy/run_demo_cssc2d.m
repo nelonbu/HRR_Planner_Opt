@@ -14,6 +14,7 @@ catch
     % If this script is already under a path-managed session, continue.
     projectRoot = fileparts(fileparts(mfilename('fullpath')));
 end
+commonCfg = getCSSCDemoConfig2D();
 
 %% 1. Environment: obstacles as unified structs
 obstacles = [
@@ -23,12 +24,12 @@ obstacles = [
 
 %% 2. FTL segment parameters
 params = struct();
-params.L = 0.15;
-params.dMin = 0.02;
-params.dPref = 0.03;
+params.L = commonCfg.L;
+params.dMin = commonCfg.dMin;
+params.dPref = commonCfg.dPref;
 
 %% 3. B-spline path
-params.degree = 3;
+params.degree = commonCfg.degree;
 startPt = [0.0, 0.0];
 goalPt  = [1.0, 0.0];
 

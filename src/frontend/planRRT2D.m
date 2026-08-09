@@ -4,13 +4,16 @@ function [path, info] = planRRT2D(startPt, goalPt, obstacles, opts)
 % The collision model is point-robot SDF with obstacle inflation. This is
 % intended as an initial-path generator before CSSC envelope optimization.
 %
-% Key opts: bounds, stepSize, goalBias, goalTol, maxIter,
-%           collisionResolution, inflateRadius, seed.
+% Key opts: bounds, stepSize, goalBias, goalTol, maxIter, maxTimeSec,
+%           collisionResolution, inflateRadius, seed, recordTree.
+% Set recordTree=true only when diagnostic figures need all sampled tree
+% edges. It does not change the planning algorithm or random sequence.
 
     if nargin < 4 || isempty(opts)
         opts = struct();
     end
     opts = setDefaults(opts);
+    tPlanning = tic;
 
     if ~isempty(opts.seed)
         rng(opts.seed);
@@ -32,19 +35,33 @@ function [path, info] = planRRT2D(startPt, goalPt, obstacles, opts)
     info.firstSolutionIter = nan;
     info.firstSolutionNodes = nan;
     info.pathLength = nan;
+    info.terminationReason = 'maxIter';
+    info.planningTimeSec = nan;
+    info.timeToFirstSolutionSec = nan;
 
     if ~isPointCollisionFree2D(startPt, obstacles, opts.inflateRadius)
         info.message = 'Start point is in collision.';
+        info.terminationReason = 'invalidStart';
+        info.planningTimeSec = toc(tPlanning);
+        info = attachTreeOutput(info, nodes, parent, opts);
         path = zeros(0, 2);
         return;
     end
     if ~isPointCollisionFree2D(goalPt, obstacles, opts.inflateRadius)
         info.message = 'Goal point is in collision.';
+        info.terminationReason = 'invalidGoal';
+        info.planningTimeSec = toc(tPlanning);
+        info = attachTreeOutput(info, nodes, parent, opts);
         path = zeros(0, 2);
         return;
     end
 
     for iter = 1:opts.maxIter
+        if toc(tPlanning) >= opts.maxTimeSec
+            info.message = 'RRT reached maxTimeSec.';
+            info.terminationReason = 'maxTimeSec';
+            break;
+        end
         info.numIter = iter;
 
         if rand < opts.goalBias
@@ -84,11 +101,17 @@ function [path, info] = planRRT2D(startPt, goalPt, obstacles, opts)
             info.firstSolutionIter = iter;
             info.firstSolutionNodes = info.numNodes;
             info.message = 'RRT connected to goal.';
+            info.terminationReason = 'success';
+            info.planningTimeSec = toc(tPlanning);
+            info.timeToFirstSolutionSec = info.planningTimeSec;
+            info = attachTreeOutput(info, nodes, parent, opts);
             return;
         end
     end
 
     info.numNodes = size(nodes, 1);
+    info.planningTimeSec = toc(tPlanning);
+    info = attachTreeOutput(info, nodes, parent, opts);
     path = zeros(0, 2);
 end
 
@@ -98,9 +121,18 @@ function opts = setDefaults(opts)
     if ~isfield(opts, 'goalBias'); opts.goalBias = 0.12; end
     if ~isfield(opts, 'goalTol'); opts.goalTol = 0.04; end
     if ~isfield(opts, 'maxIter'); opts.maxIter = 3000; end
+    if ~isfield(opts, 'maxTimeSec'); opts.maxTimeSec = inf; end
     if ~isfield(opts, 'collisionResolution'); opts.collisionResolution = 0.004; end
     if ~isfield(opts, 'inflateRadius'); opts.inflateRadius = 0.0; end
     if ~isfield(opts, 'seed'); opts.seed = []; end
+    if ~isfield(opts, 'recordTree'); opts.recordTree = false; end
+end
+
+function info = attachTreeOutput(info, nodes, parent, opts)
+    if opts.recordTree
+        info.treeNodes = nodes;
+        info.treeParent = parent(:);
+    end
 end
 
 function q = sampleBounds(bounds)

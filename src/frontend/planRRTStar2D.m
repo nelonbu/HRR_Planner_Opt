@@ -4,7 +4,7 @@ function [path, info] = planRRTStar2D(startPt, goalPt, obstacles, opts)
 % The collision model matches planRRT2D: point-robot SDF with obstacle
 % inflation and sampled segment collision checks.
 %
-% Key opts: bounds, stepSize, goalBias, goalTol, maxIter,
+% Key opts: bounds, stepSize, goalBias, goalTol, maxIter, maxTimeSec,
 %           collisionResolution, inflateRadius, seed,
 %           rewireRadius, minRewireRadius, rewireGamma,
 %           terminateOnFirstSolution, maxNoImproveIter.
@@ -13,6 +13,7 @@ function [path, info] = planRRTStar2D(startPt, goalPt, obstacles, opts)
         opts = struct();
     end
     opts = setDefaults(opts);
+    tPlanning = tic;
 
     if ~isempty(opts.seed)
         rng(opts.seed);
@@ -30,21 +31,31 @@ function [path, info] = planRRTStar2D(startPt, goalPt, obstacles, opts)
     firstSolutionIter = nan;
     firstSolutionNodes = nan;
     lastImproveIter = 0;
+    timeToFirstSolutionSec = nan;
+    timedOut = false;
 
     info = initInfo();
 
     if ~isPointCollisionFree2D(startPt, obstacles, opts.inflateRadius)
         info.message = 'Start point is in collision.';
+        info.terminationReason = 'invalidStart';
+        info.planningTimeSec = toc(tPlanning);
         path = zeros(0, 2);
         return;
     end
     if ~isPointCollisionFree2D(goalPt, obstacles, opts.inflateRadius)
         info.message = 'Goal point is in collision.';
+        info.terminationReason = 'invalidGoal';
+        info.planningTimeSec = toc(tPlanning);
         path = zeros(0, 2);
         return;
     end
 
     for iter = 1:opts.maxIter
+        if toc(tPlanning) >= opts.maxTimeSec
+            timedOut = true;
+            break;
+        end
         info.numIter = iter;
 
         if rand < opts.goalBias
@@ -92,6 +103,7 @@ function [path, info] = planRRTStar2D(startPt, goalPt, obstacles, opts)
             if isnan(firstSolutionIter)
                 firstSolutionIter = iter;
                 firstSolutionNodes = size(nodes, 1);
+                timeToFirstSolutionSec = toc(tPlanning);
             end
 
             if opts.terminateOnFirstSolution
@@ -110,15 +122,28 @@ function [path, info] = planRRTStar2D(startPt, goalPt, obstacles, opts)
     info.firstSolutionNodes = firstSolutionNodes;
     info.bestGoalParent = bestGoalParent;
     info.bestCost = bestGoalCost;
+    info.planningTimeSec = toc(tPlanning);
+    info.timeToFirstSolutionSec = timeToFirstSolutionSec;
 
     if isfinite(bestGoalCost)
         path = backtrackPathToGoal(nodes, parent, bestGoalParent, goalPt);
         info.success = true;
         info.pathLength = polylineLength(path);
         info.message = 'RRT* connected to goal.';
+        if timedOut
+            info.terminationReason = 'maxTimeSec-bestAvailable';
+        else
+            info.terminationReason = 'success';
+        end
     else
         path = zeros(0, 2);
-        info.message = 'RRT* failed to connect to goal.';
+        if timedOut
+            info.message = 'RRT* reached maxTimeSec without a solution.';
+            info.terminationReason = 'maxTimeSec';
+        else
+            info.message = 'RRT* failed to connect to goal.';
+            info.terminationReason = 'maxIter';
+        end
     end
 
     if opts.returnTree
@@ -134,6 +159,7 @@ function opts = setDefaults(opts)
     if ~isfield(opts, 'goalBias'); opts.goalBias = 0.12; end
     if ~isfield(opts, 'goalTol'); opts.goalTol = 0.04; end
     if ~isfield(opts, 'maxIter'); opts.maxIter = 3000; end
+    if ~isfield(opts, 'maxTimeSec'); opts.maxTimeSec = inf; end
     if ~isfield(opts, 'collisionResolution'); opts.collisionResolution = 0.004; end
     if ~isfield(opts, 'inflateRadius'); opts.inflateRadius = 0.0; end
     if ~isfield(opts, 'seed'); opts.seed = []; end
@@ -158,6 +184,9 @@ function info = initInfo()
     info.firstSolutionNodes = nan;
     info.bestCost = nan;
     info.pathLength = nan;
+    info.terminationReason = 'maxIter';
+    info.planningTimeSec = nan;
+    info.timeToFirstSolutionSec = nan;
 end
 
 function q = sampleBounds(bounds)

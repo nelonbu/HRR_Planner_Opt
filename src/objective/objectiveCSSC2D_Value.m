@@ -10,11 +10,12 @@ function [J, details] = objectiveCSSC2D_Value(P, Pref, obstacles, params)
     tObs = tic;
     active = selectActiveCSSCSamples(state, params);
     c = state.clearance(active.indices);
-    c = c(isfinite(c));
+    c = c(~isnan(c));
 
     if isempty(c)
-        Jobs = 1e6;
-        Jclear = 1e6;
+        invalidPenalty = getInvalidClearancePenalty(params);
+        Jobs = invalidPenalty;
+        Jclear = invalidPenalty;
     else
         obsGap = max(0, params.dMin - c);
         clearGap = max(0, params.dPref - c);
@@ -43,4 +44,15 @@ function [J, details] = objectiveCSSC2D_Value(P, Pref, obstacles, params)
     details.state = state;
     details.active = active;
     details.timing = struct('total', dtAll, 'evaluate', dtEval, 'obstacleGrad', dtObs, 'regularization', dtReg, 'other', max(0, dtAll-dtEval-dtObs-dtReg));
+end
+
+function value = getInvalidClearancePenalty(params)
+    if isfield(params, 'invalidClearancePenalty') && ...
+            isscalar(params.invalidClearancePenalty) && ...
+            isfinite(params.invalidClearancePenalty) && ...
+            params.invalidClearancePenalty >= 0
+        value = params.invalidClearancePenalty;
+    else
+        value = 1e6;
+    end
 end

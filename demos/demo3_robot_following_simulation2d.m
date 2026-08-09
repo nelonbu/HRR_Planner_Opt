@@ -18,7 +18,7 @@ catch
 end
 
 cfg = makeDemoConfig(projectRoot);
-paramsOpt = makeOptimizationParams();
+paramsOpt = makeOptimizationParams(cfg);
 
 if ~exist(cfg.outDir, 'dir')
     mkdir(cfg.outDir);
@@ -114,14 +114,11 @@ fprintf('[saved] %s\n', cfg.outDir);
 %% Configuration
 
 function cfg = makeDemoConfig(projectRoot)
-    cfg = struct();
+    cfg = getCSSCDemoConfig2D();
     cfg.projectRoot = projectRoot;
     cfg.runName = ['run_robot_sim_' datestr(now, 'yyyymmdd_HHMMSS')];
     cfg.outDir = fullfile(projectRoot, 'results', 'robot_sim', cfg.runName);
 
-    cfg.bounds = [0, 1; -0.4, 0.4];
-    cfg.startPt = [0.05, 0.0];
-    cfg.goalPt = [0.95, 0.0];
     cfg.envSeed = 1603;
 
     % Environment switch:
@@ -130,22 +127,18 @@ function cfg = makeDemoConfig(projectRoot)
     cfg.envMode = 'structured';
     cfg.sceneType = 'fourRectSChannel';
     cfg.sceneOpts = struct();
-    cfg.sceneOpts.dGap = 0.10; % for fourRectSChannel
-    cfg.sceneOpts.xWalls = [0.32, 0.68];
+    level = cfg.representativeDifficultyIndex;
+    cfg.sceneOpts.dGap = cfg.sChannel.dGap(level);
+    cfg.sceneOpts.xWalls = cfg.doubleSlit.xWalls;
     cfg.sceneOpts.gapCentersY = [-0.12, 0.14];
-    cfg.sceneOpts.gapHeight = 0.12;
-    cfg.sceneOpts.wallThickness = 0.08;
+    cfg.sceneOpts.gapHeight = cfg.doubleSlit.dGap(level);
+    cfg.sceneOpts.wallThickness = cfg.doubleSlit.wallThickness;
     cfg.rrtSeed = 42000;
     cfg.numRRTStart = 8;
-    cfg.numShortcut = 180;
     cfg.shortcutSeed = 52000;
 
-    cfg.stepSize = 0.030;
-    cfg.goalBias = 0.16;
-    cfg.goalTol = 0.035;
+    % The robot demo keeps a larger retry budget than batch experiments.
     cfg.maxIter = 8000;
-    cfg.collisionResolution = 0.003;
-    cfg.inflateRadius = 0.0;
 
     cfg.numRobotLinks = 12;
     cfg.advanceStep = 0.005;  % Must divide paramsOpt.L=0.15.
@@ -164,12 +157,12 @@ function cfg = makeDemoConfig(projectRoot)
     cfg.robot.drawTipJoint = false;
 end
 
-function params = makeOptimizationParams()
+function params = makeOptimizationParams(cfg)
     params = struct();
-    params.L = 0.15;
-    params.dMin = 0.02;
-    params.dPref = 0.03;
-    params.degree = 3;
+    params.L = cfg.L;
+    params.dMin = cfg.dMin;
+    params.dPref = cfg.dPref;
+    params.degree = cfg.degree;
 
     params.envOpts = struct();
     params.envOpts.uRange = [0, 1];
@@ -178,7 +171,7 @@ function params = makeOptimizationParams()
     params.envOpts.epsV = 1e-6;
     params.envOpts.tolDen = 1e-6;
 
-    params.wObs = 600.0;
+    params.wObs = 60000.0;
     params.wClear = 100.0;
     params.wRef = 0.01;
     params.wSmooth = 0.5;
@@ -208,7 +201,7 @@ function params = makeOptimizationParams()
     params.stop.tolStep = 1e-3;
     params.stop.patience = 10;
     params.stop.tolBestRel = 1e-4;
-    params.stop.requireSafe = false;
+    params.stop.requireSafe = true;
     params.stop.clearanceMargin = 0.0;
 
     params.printEvalTiming = false;

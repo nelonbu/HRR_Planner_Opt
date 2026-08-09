@@ -100,7 +100,7 @@ end
 %% Configuration
 
 function cfg = makeConfig(projectRoot)
-    cfg = struct();
+    cfg = getCSSCDemoConfig2D();
     cfg.projectRoot = projectRoot;
     cfg.runName = ['run_obstacle_filter_' datestr(now, 'yyyymmdd_HHMMSS')];
     cfg.outDir = fullfile(projectRoot, 'results', 'runs', cfg.runName);
@@ -119,17 +119,8 @@ function cfg = makeConfig(projectRoot)
         'offsetDoubleSlit', ...
         'fourRectSChannel'};
 
-    cfg.bounds = [0, 1; -0.4, 0.4];
-    cfg.startPt = [0.05, 0.0];
-    cfg.goalPt = [0.95, 0.0];
-
-    cfg.L = 0.15;
-    cfg.dMin = 0.02;
-    cfg.dPref = 0.03;
-    cfg.degree = 3;
     cfg.nU = 180;
     cfg.pathSampleN = 400;
-    cfg.figureResolution = 300;
 end
 
 function [obstacles, envInfo, P, params] = makeSceneCase(cfg, sceneType, seed)

@@ -161,10 +161,11 @@ function [obstacles, geom] = makeSChannel4Rect(bounds, dGap, totalW, totalH, see
     cleanupObj = onCleanup(@() rng(rngState)); %#ok<NASGU>
     rng(seed, 'twister');
 
-    minL13 = 0.08;
+    minL13 = max(0.08, 0.5*dGap + 1e-6);
     l1Max = totalW - minL13;
     if l1Max <= minL13
-        error('Cannot keep L1 and L3 positive.');
+        error(['Cannot keep L1 and L3 larger than dGap/2 for the ' ...
+            'requested dGap and W.']);
     end
 
     L1 = minL13 + rand * (l1Max - minL13);

@@ -13,6 +13,7 @@ function metrics = evaluateCSSCHighPrecision(P, obstacles, opts)
 %
 % Key outputs:
 %   metrics.minClear, metrics.success, metrics.dMinSatisfied
+%   metrics.ftlGeometricRealizable, metrics.chordConstructionSuccess
 %   metrics.pointMinClear, metrics.pathLength, metrics.turnAbsSum
 %   metrics.state, metrics.timing, metrics.paramsUsed
 
@@ -48,8 +49,14 @@ function metrics = evaluateCSSCHighPrecision(P, obstacles, opts)
     metrics.minPoint = state.minPoint;
     metrics.minU = state.minU;
     metrics.minIdx = state.minIdx;
-    metrics.success = isfinite(state.minClear) && state.minClear > 0;
-    metrics.dMinSatisfied = isfinite(state.minClear) && state.minClear >= opts.dMin;
+    metrics.success = ~isnan(state.minClear) && state.minClear > 0;
+    metrics.dMinSatisfied = ~isnan(state.minClear) && state.minClear >= opts.dMin;
+    metrics.numValidChords = nnz(state.validChord);
+    % Segment mode evaluates every geometrically valid fixed-length chord.
+    metrics.numEvaluatedChords = nnz(state.validChord);
+    metrics.chordCoverage = metrics.numEvaluatedChords / ...
+        max(1, metrics.numValidChords);
+    metrics = evaluateFTLGeometry(metrics, state);
 
     path = state.pathSample;
     if isempty(path)
@@ -68,6 +75,50 @@ function metrics = evaluateCSSCHighPrecision(P, obstacles, opts)
 
     metrics.evalTimeSec = toc(tAll);
     metrics.message = 'ok';
+end
+
+function metrics = evaluateFTLGeometry(metrics, state)
+% A lightweight common feasibility check for ideal-joint FTL motion.
+% It verifies that every chord declared geometrically feasible by the
+% fixed-chord solver is constructed with finite endpoints and acceptable
+% length residual. Joint-angle or actuator limits are intentionally not
+% part of this benchmark-level criterion.
+
+    env = state.env;
+    nFeasible = getNestedField(env, {'stats','numFeasible'}, 0);
+    nValid = nnz(state.validChord);
+    residual = getNestedField(env, {'chordResidual'}, nan(size(state.validChord)));
+    validResidual = residual(state.validChord);
+    acceptTol = getNestedField(env, {'opts','vAcceptTol'}, 5e-4);
+
+    finiteGeometry = all(isfinite(state.M(state.validChord,:)), 'all') && ...
+        all(isfinite(state.N(state.validChord,:)), 'all');
+    residualOK = ~isempty(validResidual) && ...
+        all(isfinite(validResidual)) && ...
+        all(abs(validResidual) <= acceptTol);
+
+    metrics.numFeasibleChordSamples = nFeasible;
+    metrics.chordConstructionSuccess = nFeasible > 0 && ...
+        nValid == nFeasible && finiteGeometry && residualOK;
+    metrics.ftlGeometricRealizable = metrics.chordConstructionSuccess;
+    metrics.feasibilityNumericalFailure = nFeasible > nValid || ...
+        (nValid > 0 && (~finiteGeometry || ~residualOK));
+    if isempty(validResidual)
+        metrics.maxChordLengthResidual = nan;
+    else
+        metrics.maxChordLengthResidual = max(abs(validResidual), [], 'omitnan');
+    end
+end
+
+function value = getNestedField(s, names, defaultValue)
+    value = s;
+    for i = 1:numel(names)
+        if ~isstruct(value) || ~isfield(value, names{i})
+            value = defaultValue;
+            return;
+        end
+        value = value.(names{i});
+    end
 end
 
 function opts = setDefaults(opts, nCtrl)
@@ -110,6 +161,14 @@ function metrics = emptyMetrics()
     metrics.turnSqSum = nan;
     metrics.meanAbsTurn = nan;
     metrics.numPathSamples = 0;
+    metrics.numValidChords = 0;
+    metrics.numEvaluatedChords = 0;
+    metrics.chordCoverage = nan;
+    metrics.numFeasibleChordSamples = 0;
+    metrics.chordConstructionSuccess = false;
+    metrics.ftlGeometricRealizable = false;
+    metrics.feasibilityNumericalFailure = false;
+    metrics.maxChordLengthResidual = nan;
     metrics.pathSample = zeros(0, 2);
     metrics.state = [];
     metrics.timing = [];

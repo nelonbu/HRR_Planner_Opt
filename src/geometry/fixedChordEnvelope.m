@@ -138,6 +138,21 @@ function env = fixedChordEnvelope_newtonFix(rFun, drFun, L, opts)
     GList = MList + lambdaList .* d;
 
     %% 9. Validity
+    % A fixed chord can remain valid even when the differential envelope
+    % point G is undefined, for example on a locally straight path. Keep a
+    % chord-only view for binary swept-link validators without changing the
+    % historical validLine/validSegment semantics used by CSSC.
+    validChord = feasible ...
+        & lengthOK ...
+        & isfinite(vList) ...
+        & vList > uList ...
+        & vList <= vMax ...
+        & all(isfinite(MList), 2) ...
+        & all(isfinite(NList), 2);
+    vChordList = vList;
+    NChordList = NList;
+    chordResidualList = residualList;
+
     validLine = feasible ...
         & lengthOK ...
         & isfinite(vList) ...
@@ -174,6 +189,10 @@ function env = fixedChordEnvelope_newtonFix(rFun, drFun, L, opts)
     env.validSegment = validSegment;
     env.residual = residualList;
     env.rawResidual = rawResidualList;
+    env.validChord = validChord;
+    env.vChord = vChordList;
+    env.NChord = NChordList;
+    env.chordResidual = chordResidualList;
     env.opts = opts;
 
     env.stats = struct();
@@ -188,6 +207,7 @@ function env = fixedChordEnvelope_newtonFix(rFun, drFun, L, opts)
     env.stats.avgNewtonIters = mean(newtonIters(newtonIters > 0), 'omitnan');
     env.stats.numFeasible = sum(feasible);
     env.stats.numLengthOK = sum(lengthOK & feasible);
+    env.stats.numValidChord = sum(validChord);
     env.stats.maxAbsResidual = max(abs(residualList), [], 'omitnan');
     env.stats.meanAbsResidual = mean(abs(residualList), 'omitnan');
 end

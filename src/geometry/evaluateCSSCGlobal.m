@@ -117,13 +117,19 @@ function state = evaluateCSSCGlobal(P, obstacles, params)
     state.clearanceMode = params.clearanceMode;
 
     state.u = env.u;
-    state.v = env.v;
-    state.M = env.M;
-    state.N = env.N;
+    state.v = clearanceOut.vUsed;
+    state.M = clearanceOut.MUsed;
+    state.N = clearanceOut.NUsed;
     state.G = env.G;
     state.lambda = env.lambda;
-    state.validLine = env.validLine;
-    state.validSegment = env.validSegment;
+    % In segment mode validLine is the query-valid chord mask for backward
+    % compatibility. Preserve the raw envelope masks under explicit names.
+    state.validLine = validLineMask;
+    state.validSegment = validSegmentMask;
+    state.validChord = getLogicalField(env, 'validChord', env.validLine);
+    state.validEnvelopeLine = env.validLine;
+    state.validEnvelopeSegment = env.validSegment;
+    state.clearanceValiditySource = clearanceOut.validitySource;
 
     state.clearance = clearance;
     state.clearanceSegment = clearanceSegment;
@@ -193,6 +199,14 @@ function state = evaluateCSSCGlobal(P, obstacles, params)
 
     if params.printEvalTiming
         printEvaluateTiming(timing);
+    end
+end
+
+function value = getLogicalField(s, name, defaultValue)
+    if isfield(s, name)
+        value = logical(s.(name));
+    else
+        value = logical(defaultValue);
     end
 end
 

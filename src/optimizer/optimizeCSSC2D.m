@@ -30,27 +30,47 @@ function [Popt, info] = optimizeCSSC2D(Pinit, Pref, obstacles, params)
     info.relStepHist = nan(params.numIter,1);
     info.relImproveHist = nan(params.numIter,1);
     info.bestJHist = nan(params.numIter,1);
+    info.bestSafeJHist = nan(params.numIter,1);
     info.noImproveCountHist = nan(params.numIter,1);
     info.snapshots = cell(params.numIter,1);
     info.gradMode = params.solver.gradMode;
+    info.objectiveMode = params.solver.objectiveMode;
+    info.returnPolicy = params.returnPolicy;
     info.timing = initTiming(params.numIter);
     info.stopParams = params.stop;
     info.converged = false;
+    info.failed = false;
     info.stopIter = params.numIter;
     info.stopReason = 'maxIter';
     info.bestP = Ptemplate;
     info.bestJ = inf;
     info.bestIter = 0;
     info.bestDetails = [];
+    info.bestSafeP = [];
+    info.bestSafeJ = inf;
+    info.bestSafeIter = 0;
+    info.bestSafeDetails = [];
+    info.hasSafeSolution = false;
+    info.returnedSafe = false;
+    info.returnedIter = 0;
     info.noImproveCount = 0;
     info.returnedBest = true;
+    info.elapsedTimeSec = 0;
 
-    fprintf('[optimizeCSSC2D] gradMode = %s\n', params.solver.gradMode);
+    fprintf('[optimizeCSSC2D] gradMode = %s | objectiveMode = %s\n', ...
+        params.solver.gradMode, params.solver.objectiveMode);
 
     iterDone = 0;
+    tOptimizeAll = tic;
     bestState = initBestState(Ptemplate);
+    bestSafeState = initBestState([]);
     noImproveCount = 0;
     for iter = 1:params.numIter
+        if toc(tOptimizeAll) >= params.stop.maxTimeSec
+            info.stopIter = iterDone;
+            info.stopReason = 'maxTimeSec';
+            break;
+        end
         tIter = tic;
 
         P = unpackInterior(x, Ptemplate);
@@ -58,13 +78,15 @@ function [Popt, info] = optimizeCSSC2D(Pinit, Pref, obstacles, params)
         switch lower(params.solver.gradMode)
             case {'semi-analytic','semianalytic','semi'}
                 tObj = tic;
-                [J, details, gradP] = objectiveCSSC2D_SemiGrad(P, Pref, obstacles, params);
+                [J, details, gradP] = objectiveWithGradient( ...
+                    P, Pref, obstacles, params);
                 dtObj = toc(tObj);
                 G = packInteriorGradient(gradP);
                 gradStats = emptyGradStats();
                 dtGrad = 0;
                 objCalls = 1;
                 objAll = dtObj;
+                gradientComplete = true;
 
             case {'finite-diff','finitediff','fd'}
                 objFunX = @(xx) objectiveFromVector(xx, Ptemplate, Pref, obstacles, params);
@@ -73,7 +95,11 @@ function [Popt, info] = optimizeCSSC2D(Pinit, Pref, obstacles, params)
                 dtObj = toc(tObj);
 
                 tGrad = tic;
-                [G, gradStats] = finiteDifferenceGradientTimed(objFunX, x, params.fdStep);
+                remainingGradTime = max(0, params.stop.maxTimeSec - ...
+                    toc(tOptimizeAll));
+                [G, gradStats, gradientComplete] = ...
+                    finiteDifferenceGradientTimed( ...
+                    objFunX, x, params.fdStep, remainingGradTime);
                 dtGrad = toc(tGrad);
                 objCalls = 1 + gradStats.numObjCalls;
                 objAll = dtObj + gradStats.objTotalTime;
@@ -82,26 +108,38 @@ function [Popt, info] = optimizeCSSC2D(Pinit, Pref, obstacles, params)
                 error('Unknown params.solver.gradMode: %s', params.solver.gradMode);
         end
 
-        [bestState, improvedBest] = updateBestState( ...
+        clearanceFailure = isClearanceEvaluationFailure(details);
+        [bestState, significantBest] = updateBestState( ...
             bestState, P, J, details, iter, params.stop.tolBestRel);
-        if improvedBest
+        if isSafetySatisfied(details, params)
+            bestSafeState = updateBestSafeState( ...
+                bestSafeState, P, J, details, iter);
+        end
+        if significantBest
             noImproveCount = 0;
         else
             noImproveCount = noImproveCount + 1;
         end
 
         tUpdate = tic;
-        gradNormRaw = norm(G);
+        if gradientComplete
+            gradNormRaw = norm(G);
+        else
+            gradNormRaw = nan;
+            G = zeros(size(x));
+        end
         if gradNormRaw > params.gradClip
             G = G * params.gradClip / (gradNormRaw + 1e-12);
         end
 
-        M = params.beta1 * M + (1 - params.beta1) * G;
-        V = params.beta2 * V + (1 - params.beta2) * (G.^2);
-        Mhat = M / (1 - params.beta1^iter);
-        Vhat = V / (1 - params.beta2^iter);
         xPrev = x;
-        x = x - params.lr * Mhat ./ (sqrt(Vhat) + params.epsAdam);
+        if ~clearanceFailure && gradientComplete
+            M = params.beta1 * M + (1 - params.beta1) * G;
+            V = params.beta2 * V + (1 - params.beta2) * (G.^2);
+            Mhat = M / (1 - params.beta1^iter);
+            Vhat = V / (1 - params.beta2^iter);
+            x = x - params.lr * Mhat ./ (sqrt(Vhat) + params.epsAdam);
+        end
         stepNorm = norm(x - xPrev);
         relStep = stepNorm / max(1, norm(xPrev));
         dtUpdate = toc(tUpdate);
@@ -116,11 +154,17 @@ function [Popt, info] = optimizeCSSC2D(Pinit, Pref, obstacles, params)
         info.relStepHist(iter) = relStep;
         info.relImproveHist(iter) = computeRelativeImprovement(info.Jhist, iter, params.stop.window);
         info.bestJHist(iter) = bestState.J;
+        info.bestSafeJHist(iter) = bestSafeState.J;
         info.noImproveCountHist(iter) = noImproveCount;
         info.bestP = bestState.P;
         info.bestJ = bestState.J;
         info.bestIter = bestState.iter;
         info.bestDetails = bestState.details;
+        info.bestSafeP = bestSafeState.P;
+        info.bestSafeJ = bestSafeState.J;
+        info.bestSafeIter = bestSafeState.iter;
+        info.bestSafeDetails = bestSafeState.details;
+        info.hasSafeSolution = isfinite(bestSafeState.J);
         info.noImproveCount = noImproveCount;
 
         if iter == 1 || mod(iter, params.saveInterval) == 0 || iter == params.numIter
@@ -157,15 +201,35 @@ function [Popt, info] = optimizeCSSC2D(Pinit, Pref, obstacles, params)
             printTimingDebug(info, iter, params);
         end
 
+        if ~gradientComplete
+            info.stopIter = iter;
+            info.stopReason = 'maxTimeSec';
+            info.snapshots{iter} = unpackInterior(x, Ptemplate);
+            break;
+        end
+
+        if toc(tOptimizeAll) >= params.stop.maxTimeSec
+            info.stopIter = iter;
+            info.stopReason = 'maxTimeSec';
+            info.snapshots{iter} = unpackInterior(x, Ptemplate);
+            break;
+        end
+
         stopState = checkEarlyStop(info, iter, details, gradNormRaw, relStep, params);
         if stopState.shouldStop
-            info.converged = true;
+            info.converged = ~stopState.isFailure;
+            info.failed = stopState.isFailure;
             info.stopIter = iter;
             info.stopReason = stopState.reason;
             info.snapshots{iter} = unpackInterior(x, Ptemplate);
-            fprintf('early stop at iter %d | reason = %s | relImprove = %.3g | gradNorm = %.3g | relStep = %.3g | noImprove = %d | bestIter = %d | bestJ = %.6g\n', ...
-                iter, info.stopReason, info.relImproveHist(iter), gradNormRaw, ...
-                relStep, noImproveCount, bestState.iter, bestState.J);
+            if stopState.isFailure
+                fprintf('optimization failed at iter %d | reason = %s | bestIter = %d | bestJ = %.6g\n', ...
+                    iter, info.stopReason, bestState.iter, bestState.J);
+            else
+                fprintf('early stop at iter %d | reason = %s | relImprove = %.3g | gradNorm = %.3g | relStep = %.3g | noImprove = %d | bestIter = %d | bestJ = %.6g\n', ...
+                    iter, info.stopReason, info.relImproveHist(iter), gradNormRaw, ...
+                    relStep, noImproveCount, bestState.iter, bestState.J);
+            end
             break;
         end
     end
@@ -173,26 +237,98 @@ function [Popt, info] = optimizeCSSC2D(Pinit, Pref, obstacles, params)
     info.numIterActual = iterDone;
     info = trimInfoHistories(info, iterDone, objectiveComponentFields);
 
-    if isfinite(bestState.J)
-        Popt = bestState.P;
-    else
-        Popt = unpackInterior(x, Ptemplate);
-        info.returnedBest = false;
+    finalIterateP = unpackInterior(x, Ptemplate);
+    [finalIterateJ, finalIterateDetails] = objectiveValue( ...
+        finalIterateP, Pref, obstacles, params);
+    info.finalIterateP = finalIterateP;
+    info.finalIterateJ = finalIterateJ;
+    info.finalIterateDetails = finalIterateDetails;
+
+    switch lower(char(params.returnPolicy))
+        case {'best-safe','bestsafe'}
+            if isfinite(bestSafeState.J)
+                Popt = bestSafeState.P;
+                info.returnedSafe = true;
+                info.returnedIter = bestSafeState.iter;
+            elseif isfinite(bestState.J)
+                Popt = bestState.P;
+                info.returnedIter = bestState.iter;
+            else
+                Popt = finalIterateP;
+                info.returnedBest = false;
+            end
+        case {'best-objective','best'}
+            if isfinite(bestState.J)
+                Popt = bestState.P;
+                info.returnedIter = bestState.iter;
+            else
+                Popt = finalIterateP;
+                info.returnedBest = false;
+            end
+        case {'last-iterate','last'}
+            Popt = finalIterateP;
+            info.returnedBest = false;
+            info.returnedIter = iterDone;
+            info.returnedSafe = isSafetySatisfied( ...
+                finalIterateDetails, params);
+        otherwise
+            error('Unknown params.returnPolicy: %s', params.returnPolicy);
     end
     info.bestP = bestState.P;
     info.bestJ = bestState.J;
     info.bestIter = bestState.iter;
     info.bestDetails = bestState.details;
+    info.bestSafeP = bestSafeState.P;
+    info.bestSafeJ = bestSafeState.J;
+    info.bestSafeIter = bestSafeState.iter;
+    info.bestSafeDetails = bestSafeState.details;
+    info.hasSafeSolution = isfinite(bestSafeState.J);
     info.noImproveCount = noImproveCount;
-    [info.finalJ, info.finalDetails] = objectiveCSSC2D_Value(Popt, Pref, obstacles, params);
+    [info.finalJ, info.finalDetails] = objectiveValue( ...
+        Popt, Pref, obstacles, params);
     info.finalMinClear = info.finalDetails.minClear;
+    info.elapsedTimeSec = toc(tOptimizeAll);
 end
 
 %% Helpers
 
 function [J, details] = objectiveFromVector(x, Ptemplate, Pref, obstacles, params)
     P = unpackInterior(x, Ptemplate);
-    [J, details] = objectiveCSSC2D_Value(P, Pref, obstacles, params);
+    [J, details] = objectiveValue(P, Pref, obstacles, params);
+end
+
+function [J, details, gradP] = objectiveWithGradient( ...
+        P, Pref, obstacles, params)
+    switch normalizeObjectiveMode(params.solver.objectiveMode)
+        case 'cssc-chord'
+            [J, details, gradP] = objectiveCSSC2D_SemiGrad( ...
+                P, Pref, obstacles, params);
+        case 'centerline'
+            [J, details, gradP] = objectiveCenterline2D_SemiGrad( ...
+                P, Pref, obstacles, params);
+    end
+end
+
+function [J, details] = objectiveValue(P, Pref, obstacles, params)
+    switch normalizeObjectiveMode(params.solver.objectiveMode)
+        case 'cssc-chord'
+            [J, details] = objectiveCSSC2D_Value(P, Pref, obstacles, params);
+        case 'centerline'
+            [J, details] = objectiveCenterline2D_Value( ...
+                P, Pref, obstacles, params);
+    end
+end
+
+function mode = normalizeObjectiveMode(mode)
+    mode = regexprep(lower(char(string(mode))), '[^a-z0-9]', '');
+    switch mode
+        case {'cssc','csscchord','chord','segment'}
+            mode = 'cssc-chord';
+        case {'centerline','point','pointsdf'}
+            mode = 'centerline';
+        otherwise
+            error('Unknown objective mode: %s', char(string(mode)));
+    end
 end
 
 function info = storeObjectiveHistory(info, iter, J, details, componentFields)
@@ -231,20 +367,25 @@ function bestState = initBestState(Ptemplate)
     bestState.details = [];
 end
 
-function [bestState, improved] = updateBestState(bestState, P, J, details, iter, tolBestRel)
-    improved = false;
-    if ~isfinite(J)
+function [bestState, significantImprovement] = updateBestState( ...
+        bestState, P, J, details, iter, tolBestRel)
+    significantImprovement = false;
+    if ~isfinite(J) || isClearanceEvaluationFailure(details)
         return;
     end
 
     if ~isfinite(bestState.J)
-        improved = true;
+        shouldUpdate = true;
+        significantImprovement = true;
     else
-        minImprove = tolBestRel * max(1, abs(bestState.J));
-        improved = (bestState.J - J) > minImprove;
+        deltaJ = bestState.J - J;
+        shouldUpdate = deltaJ > 0;
+        relImprovement = deltaJ / max(abs(bestState.J), eps);
+        significantImprovement = shouldUpdate && ...
+            relImprovement > tolBestRel;
     end
 
-    if improved
+    if shouldUpdate
         bestState.P = P;
         bestState.J = J;
         bestState.iter = iter;
@@ -252,9 +393,30 @@ function [bestState, improved] = updateBestState(bestState, P, J, details, iter,
     end
 end
 
+function bestSafeState = updateBestSafeState( ...
+        bestSafeState, P, J, details, iter)
+    if ~isfinite(J) || isClearanceEvaluationFailure(details)
+        return;
+    end
+    if ~isfinite(bestSafeState.J) || J < bestSafeState.J
+        bestSafeState.P = P;
+        bestSafeState.J = J;
+        bestSafeState.iter = iter;
+        bestSafeState.details = details;
+    end
+end
+
 function stopState = checkEarlyStop(info, iter, details, gradNorm, relStep, params)
     stopState.shouldStop = false;
     stopState.reason = 'running';
+    stopState.isFailure = false;
+
+    if isClearanceEvaluationFailure(details)
+        stopState.shouldStop = true;
+        stopState.reason = 'invalid-clearance';
+        stopState.isFailure = true;
+        return;
+    end
 
     if ~params.stop.enable || iter < params.stop.minIter
         return;
@@ -299,10 +461,24 @@ function safeEnough = checkStopSafety(details, params)
         return;
     end
 
-    safeEnough = false;
-    if isfield(params, 'dMin') && isfield(details, 'minClear') && isfinite(details.minClear)
-        safeEnough = details.minClear >= params.dMin + params.stop.clearanceMargin;
+    safeEnough = isSafetySatisfied(details, params);
+end
+
+function tf = isSafetySatisfied(details, params)
+    tf = false;
+    if isfield(params, 'dMin') && isstruct(details) && ...
+            isfield(details, 'minClear') && isscalar(details.minClear) && ...
+            isfinite(details.minClear)
+        tf = details.minClear >= ...
+            params.dMin + params.stop.clearanceMargin;
     end
+end
+
+function tf = isClearanceEvaluationFailure(details)
+    tf = ~isstruct(details) || ...
+        ~isfield(details, 'minClear') || ...
+        ~isscalar(details.minClear) || ...
+        isnan(details.minClear);
 end
 
 function info = trimInfoHistories(info, nIter, componentFields)
@@ -318,6 +494,7 @@ function info = trimInfoHistories(info, nIter, componentFields)
     info.relStepHist = info.relStepHist(1:nIter);
     info.relImproveHist = info.relImproveHist(1:nIter);
     info.bestJHist = info.bestJHist(1:nIter);
+    info.bestSafeJHist = info.bestSafeJHist(1:nIter);
     info.noImproveCountHist = info.noImproveCountHist(1:nIter);
     info.snapshots = info.snapshots(1:nIter);
 
@@ -344,11 +521,18 @@ function g = packInteriorGradient(gradP)
     g = Gint(:);
 end
 
-function [G, stats] = finiteDifferenceGradientTimed(objFun, x, h)
+function [G, stats, complete] = finiteDifferenceGradientTimed( ...
+        objFun, x, h, maxTimeSec)
     G = zeros(size(x));
     stats = emptyGradStats();
+    complete = true;
+    tAll = tic;
 
     for k = 1:numel(x)
+        if toc(tAll) >= maxTimeSec
+            complete = false;
+            return;
+        end
         hk = h * max(1, abs(x(k)));
         xp = x;
         xm = x;
@@ -361,6 +545,11 @@ function [G, stats] = finiteDifferenceGradientTimed(objFun, x, h)
         stats.numObjCalls = stats.numObjCalls + 1;
         stats.objTotalTime = stats.objTotalTime + dt;
         stats.timingSum = addTiming(stats.timingSum, getTiming(detailsP));
+
+        if toc(tAll) >= maxTimeSec
+            complete = false;
+            return;
+        end
 
         t = tic;
         [Jm, detailsM] = objFun(xm);
@@ -462,6 +651,13 @@ end
 function params = setDefaultParams(params)
     if ~isfield(params, 'solver'); params.solver = struct(); end
     if ~isfield(params.solver, 'gradMode'); params.solver.gradMode = 'semi-analytic'; end
+    if ~isfield(params.solver, 'objectiveMode') || ...
+            isempty(params.solver.objectiveMode)
+        params.solver.objectiveMode = 'cssc-chord';
+    end
+    if ~isfield(params, 'returnPolicy') || isempty(params.returnPolicy)
+        params.returnPolicy = 'best-safe';
+    end
 
     if ~isfield(params, 'numIter'); params.numIter = 80; end
     if ~isfield(params, 'lr'); params.lr = 0.008; end
@@ -488,8 +684,14 @@ function params = setDefaultParams(params)
        ~isscalar(params.stop.tolBestRel) || ~isfinite(params.stop.tolBestRel)
         params.stop.tolBestRel = 1e-4;
     end
-    if ~isfield(params.stop, 'requireSafe'); params.stop.requireSafe = false; end
+    if ~isfield(params.stop, 'requireSafe'); params.stop.requireSafe = true; end
     if ~isfield(params.stop, 'clearanceMargin'); params.stop.clearanceMargin = 0.0; end
+    if ~isfield(params.stop, 'maxTimeSec') || isempty(params.stop.maxTimeSec)
+        params.stop.maxTimeSec = inf;
+    end
+    if ~isfield(params, 'invalidClearancePenalty')
+        params.invalidClearancePenalty = 1e6;
+    end
 
     if ~isfield(params, 'enableTimingDebug'); params.enableTimingDebug = false; end
     if ~isfield(params, 'timingPrintInterval'); params.timingPrintInterval = 10; end
@@ -497,4 +699,7 @@ function params = setDefaultParams(params)
 
     if ~isfield(params, 'activeTopK'); params.activeTopK = 20; end
     if ~isfield(params, 'activeClearanceMargin'); params.activeClearanceMargin = 0.05; end
+    if ~isfield(params, 'activeMode') || isempty(params.activeMode)
+        params.activeMode = 'topk';
+    end
 end

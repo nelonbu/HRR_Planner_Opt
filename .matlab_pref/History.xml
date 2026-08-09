@@ -1,0 +1,998 @@
+<?xml version="1.0" encoding="utf-8"?>
+<history>
+<session>
+<command time_stamp="17e32a9fdc2">%-- 2022/1/7 11:51 --%</command>
+<command execution_time="35" repeat="9">cal</command>
+</session>
+<session>
+<command time_stamp="17e32b661f6">%-- 2022/1/7 12:05 --%</command>
+<command execution_time="46" repeat="4">cal</command>
+<command batch="1">[6 170;</command>
+<command batch="1" execution_time="33">170 5650]</command>
+<command error="true" execution_time="198">A=ANS</command>
+<command execution_time="4">A=ans</command>
+<command execution_time="51">A^-1</command>
+</session>
+<session>
+<command time_stamp="17e60cf0766">%-- 2022/1/16 10:54 --%</command>
+<command execution_time="8">bearingAnalysis</command>
+</session>
+<session>
+<command time_stamp="17e60e6e552">%-- 2022/1/16 11:20 --%</command>
+<command error="true" execution_time="257">bearingAnalysis</command>
+<command execution_time="35" repeat="3">bearingScript</command>
+<command execution_time="729">help fix</command>
+<command execution_time="84" repeat="14">bearingScript</command>
+<command error="true" execution_time="358">length(freq)</command>
+<command execution_time="109" repeat="2">bearingScript</command>
+<command execution_time="43">outerF-range</command>
+<command execution_time="76" repeat="6">bearingScript</command>
+</session>
+<session>
+<command time_stamp="17e620843a4">%-- 2022/1/16 16:36 --%</command>
+<command execution_time="24" repeat="23">bearingScript</command>
+<command error="true" execution_time="201">mex -setup</command>
+<command error="true" execution_time="95">mbuild -setup</command>
+</session>
+<session>
+<command time_stamp="17e6224d2c5">%-- 2022/1/16 17:08 --%</command>
+<command error="true" execution_time="4522">mbuild -setup</command>
+</session>
+<session>
+<command time_stamp="17e62287a62">%-- 2022/1/16 17:12 --%</command>
+<command error="true" execution_time="4342">mbuild -setup</command>
+</session>
+<session>
+<command time_stamp="17e62534f25">%-- 2022/1/16 17:58 --%</command>
+<command execution_time="8256">mbuild -setup</command>
+<command execution_time="289">mex -setup C++</command>
+</session>
+<session>
+<command time_stamp="17e70829ba5">%-- 2022/1/19 12:05 --%</command>
+<command error="true" execution_time="96" repeat="2">bearingScript</command>
+</session>
+<session>
+<command time_stamp="17e7084359e">%-- 2022/1/19 12:06 --%</command>
+<command execution_time="160" repeat="11">bearingScript</command>
+</session>
+<session>
+<command time_stamp="17ee7c1466f">%-- 2022/2/11 15:48 --%</command>
+<command error="true" execution_time="59833">simulation</command>
+</session>
+<session>
+<command time_stamp="1844cac1c9f">%-- 2022/11/6 19:20 --%</command>
+<command error="true" execution_time="534">e</command>
+<command execution_time="5">exp(1)</command>
+<command execution_time="4">exp(-(10/0.52)^2)</command>
+<command execution_time="4">exp(-(1/0.52)^2)</command>
+<command execution_time="4">ans*0.011</command>
+<command execution_time="3">0.00126/0.011</command>
+<command error="true" execution_time="165">ln(ans)</command>
+<command execution_time="4">log(10)</command>
+<command execution_time="4">log(0.1145)</command>
+<command execution_time="4">-ans</command>
+<command execution_time="4">sqrt(ans)</command>
+<command error="true" execution_time="18">*0.52</command>
+<command execution_time="4">ans*0.52</command>
+<command execution_time="50" repeat="3">stribeck</command>
+<command execution_time="4385" repeat="4">s</command>
+</session>
+<session>
+<command time_stamp="187456a61e8">%-- 2023/4/3 12:40 --%</command>
+<command execution_time="669">help xlsread</command>
+<command execution_time="756">plot(1:10, 1:10)</command>
+<command execution_time="33">plot(1:0.1:10, 1:0.1:10)</command>
+<command execution_time="51">plot(1:0.1:10, 1:0.2:19)</command>
+<command execution_time="834" repeat="7">draw</command>
+<command execution_time="144">help xlabel</command>
+<command execution_time="312" repeat="7">draw</command>
+<command execution_time="104">help xlsread</command>
+<command error="true" execution_time="408" repeat="9">draw</command>
+<command execution_time="336">help datatime</command>
+<command error="true" execution_time="390" repeat="5">draw</command>
+<command execution_time="139">help datenum</command>
+<command execution_time="319">draw</command>
+<command execution_time="80">help datestr</command>
+<command execution_time="437" repeat="14">draw</command>
+<command execution_time="75">help yyaxis</command>
+<command execution_time="5" repeat="2">eye(3)</command>
+<command error="true" execution_time="570" repeat="3">draw</command>
+<command execution_time="39">axis</command>
+<command execution_time="90">help axis</command>
+<command execution_time="449" repeat="7">draw</command>
+<command execution_time="67">help ylabel</command>
+<command execution_time="450">draw</command>
+<command execution_time="440" repeat="4">draw_voltage</command>
+<command execution_time="564" repeat="24">draw_ping</command>
+<command execution_time="414">draw_voltage</command>
+<command execution_time="579">draw_ping</command>
+<command execution_time="408" repeat="2">draw_voltage</command>
+<command execution_time="593">draw_ping</command>
+</session>
+<session>
+<command time_stamp="18746c6a2e1">%-- 2023/4/3 19:00 --%</command>
+<command execution_time="646" repeat="3">draw_ping_485</command>
+<command execution_time="538" repeat="2">draw_motor</command>
+<command execution_time="419" repeat="5">draw_voltage</command>
+<command execution_time="467">draw_motor</command>
+<command execution_time="499" repeat="2">draw_voltage</command>
+<command execution_time="452">draw_motor</command>
+<command execution_time="573" repeat="2">draw_ping_485</command>
+<command execution_time="471">draw_voltage</command>
+<command execution_time="676">draw_motor</command>
+<command execution_time="573">draw_ping_485</command>
+</session>
+<session>
+<command time_stamp="18750110528">%-- 2023/4/5 14:18 --%</command>
+<command error="true" execution_time="1141" repeat="2">filter</command>
+<command execution_time="695">help imread</command>
+<command execution_time="1760" repeat="6">filter</command>
+<command error="true" execution_time="165" repeat="7">start</command>
+<command execution_time="1545" repeat="11">fuzzySapDenoise</command>
+</session>
+<session>
+<command time_stamp="1880f00282c">%-- 2023/5/12 16:07 --%</command>
+<command execution_time="142" repeat="5">k_calculate</command>
+</session>
+<session>
+<command time_stamp="1880f219ff0">%-- 2023/5/12 16:44 --%</command>
+<command execution_time="64" repeat="3">k_calculate</command>
+</session>
+<session>
+<command time_stamp="188144fb574">%-- 2023/5/13 16:52 --%</command>
+<command execution_time="147" repeat="42">k_calculate</command>
+</session>
+<session>
+<command time_stamp="1882487776b">%-- 2023/5/16 20:27 --%</command>
+<command execution_time="649">help moviein</command>
+</session>
+<session>
+<command time_stamp="188283d8ef0">%-- 2023/5/17 13:45 --%</command>
+<command execution_time="1695">route0</command>
+<command error="true" execution_time="27183">pic_draw</command>
+<command error="true" execution_time="100" repeat="7">simulation</command>
+<command execution_time="5">cd 'E:\超冗余\本科毕设\2 运动学建模\matlab'</command>
+<command error="true" execution_time="2237" repeat="4">simulation</command>
+</session>
+<session>
+<command time_stamp="1882d1d06d9">%-- 2023/5/18 12:27 --%</command>
+<command execution_time="30">load('SZH.mat')</command>
+<command execution_time="5">load('SZH.mat', 'data')</command>
+<command error="true" execution_time="1051">RRT_3D_whh</command>
+<command error="true" execution_time="544">RRT_3D_whh_MultiEntrance</command>
+<command error="true" execution_time="104">Draw_Robot</command>
+<command batch="2" error="true" execution_time="833023" repeat="6">main_C919</command>
+</session>
+<session>
+<command time_stamp="1882dce280b">%-- 2023/5/18 15:41 --%</command>
+<command error="true" execution_time="5807" repeat="8">simulation</command>
+<command execution_time="284">help movie</command>
+<command error="true" execution_time="87056" repeat="3">simulation</command>
+<command execution_time="152">help meshgrid</command>
+<command error="true" execution_time="32554" repeat="8">simulation</command>
+</session>
+<session>
+<command time_stamp="1882df165b6">%-- 2023/5/18 16:19 --%</command>
+<command error="true" execution_time="155807" repeat="3">main_C919</command>
+<command error="true" execution_time="7629" repeat="4">simulation</command>
+</session>
+<session>
+<command time_stamp="18832b41ca6">%-- 2023/5/19 14:30 --%</command>
+<command batch="3" execution_time="4055" repeat="6">simulation</command>
+</session>
+<session>
+<command time_stamp="18832d50489">%-- 2023/5/19 15:06 --%</command>
+<command error="true" execution_time="3136" repeat="5">simulation</command>
+<command execution_time="373">help sphere</command>
+<command error="true" execution_time="12871" repeat="5">simulation</command>
+<command execution_time="148">help break</command>
+<command error="true" execution_time="10317" repeat="15">simulation</command>
+</session>
+<session>
+<command time_stamp="188333cb631">%-- 2023/5/19 16:59 --%</command>
+<command execution_time="212287" repeat="3">simulation</command>
+</session>
+<session>
+<command time_stamp="18842803869">%-- 2023/5/22 16:07 --%</command>
+<command error="true" execution_time="166619" repeat="23">simulation</command>
+</session>
+<session>
+<command time_stamp="18847118376">%-- 2023/5/23 13:25 --%</command>
+<command execution_time="10893" repeat="8">simulation</command>
+</session>
+<session>
+<command time_stamp="189af9d835e">%-- 2023/8/1 13:41 --%</command>
+<command execution_time="116" repeat="6">untitled</command>
+<command execution_time="54" repeat="6">traj_generate_1</command>
+<command execution_time="44">traj_generate_1_2</command>
+<command execution_time="43">traj_generate_1</command>
+<command execution_time="41">traj_generate_1_2</command>
+</session>
+<session>
+<command time_stamp="189b50b0d5f">%-- 2023/8/2 14:59 --%</command>
+<command execution_time="96" repeat="6">traj_generate_1</command>
+<command execution_time="14">load('traj1.mat')</command>
+<command execution_time="11">min([1 2 3])</command>
+<command error="true" execution_time="611">id,nm=min([1 2 3])</command>
+<command execution_time="4">[id,nm]=min([1 2 3])</command>
+<command execution_time="26">untitled2</command>
+<command error="true" execution_time="18125">FTL_Planning</command>
+<command execution_time="8">150/400</command>
+<command execution_time="4">ans*180/pi</command>
+<command error="true" execution_time="6601">FTL_Planning_Method1</command>
+<command error="true" execution_time="4069" repeat="4">FTL_Planning_Method2</command>
+<command error="true" execution_time="1971">FTL_Planning_Method1</command>
+<command execution_time="81" repeat="19">FTL_Planning_Method2</command>
+<command error="true" execution_time="6947" repeat="5">simulation</command>
+<command execution_time="274">FTL_Planning_Method2</command>
+<command error="true" execution_time="7990" repeat="6">simulation</command>
+<command execution_time="225596" repeat="11">simulation1</command>
+</session>
+<session>
+<command time_stamp="189ba4ae359">%-- 2023/8/3 15:26 --%</command>
+<command batch="4">FTL_Planning_Method2</command>
+</session>
+<session>
+<command time_stamp="189ba4d613b">%-- 2023/8/3 15:29 --%</command>
+<command execution_time="165" repeat="5">FTL_Planning_Method2</command>
+<command error="true" execution_time="20353" repeat="8">simulation_djq</command>
+<command error="true" execution_time="154" repeat="10">FTL_Planning_Method2</command>
+<command execution_time="14">150*d+0:as:(150*d-as)</command>
+<command execution_time="59">FTL_Planning_Method2</command>
+<command execution_time="4">150*d+0:as:(150*d-as)</command>
+<command execution_time="6">0:as:(150*d-as)</command>
+<command execution_time="5">traja(1,1)-150*d</command>
+<command execution_time="5">traja(1,1)-150*d+0:as:(150*d-as)</command>
+<command error="true" execution_time="156">FTL_Planning_Method2</command>
+<command execution_time="5">zeros(2,aL*d)</command>
+<command error="true" execution_time="159">FTL_Planning_Method2</command>
+<command execution_time="7">(traja(1,1)-150*d+0:as:(150*d-as))</command>
+<command execution_time="57">FTL_Planning_Method2</command>
+<command execution_time="6">(traja(1,1)-150*d+0:as:(150*d-as))</command>
+<command execution_time="55" repeat="6">FTL_Planning_Method2</command>
+</session>
+<session>
+<command time_stamp="189bac7b9e5">%-- 2023/8/3 17:43 --%</command>
+<command execution_time="48" repeat="16">FTL_Planning_Method2</command>
+</session>
+<session>
+<command time_stamp="189bf1ee01a">%-- 2023/8/4 13:56 --%</command>
+<command execution_time="168">FTL_Planning_Method2</command>
+<command error="true" execution_time="141" repeat="2">untitled2</command>
+<command execution_time="7">control_point(i,:,j)</command>
+<command execution_time="31" repeat="7">untitled2</command>
+<command execution_time="979" repeat="2">FTL_Planning_Method2</command>
+<command execution_time="245" repeat="12">untitled2</command>
+<command error="true" execution_time="2707" repeat="2">simulation</command>
+<command execution_time="236">untitled2</command>
+<command error="true" execution_time="46776" repeat="5">simulation</command>
+<command execution_time="296">help asin</command>
+<command execution_time="340">untitled2</command>
+<command error="true" execution_time="203">forwardKinematics</command>
+<command error="true" execution_time="10998" repeat="2">simulation</command>
+<command execution_time="265">untitled2</command>
+<command error="true" execution_time="185">forwardKinematics</command>
+<command error="true" execution_time="94" repeat="2">simulation</command>
+<command execution_time="233">untitled2</command>
+<command error="true" execution_time="1958" repeat="2">simulation</command>
+<command execution_time="228">untitled2</command>
+<command error="true" execution_time="1498">simulation</command>
+</session>
+<session>
+<command time_stamp="189c05b0437">%-- 2023/8/4 19:42 --%</command>
+<command execution_time="299" repeat="2">simulation</command>
+<command execution_time="247" repeat="7">untitled2</command>
+<command execution_time="189">FTL_Planning_Method2</command>
+<command execution_time="239">untitled2</command>
+<command execution_time="17659" repeat="2">simulation</command>
+<command execution_time="75" repeat="11">FTL_Planning_Method2</command>
+<command execution_time="238">untitled2</command>
+<command execution_time="112">FTL_Planning_Method2</command>
+<command execution_time="240">untitled2</command>
+<command execution_time="158" repeat="7">FTL_Planning_Method2</command>
+<command execution_time="241">untitled2</command>
+<command execution_time="17726" repeat="2">simulation</command>
+<command execution_time="345">untitled2</command>
+<command execution_time="17519">simulation</command>
+<command execution_time="86" repeat="2">untitled2</command>
+<command execution_time="6">R(:,:,i-1)'*R(:,:,i-1)</command>
+<command execution_time="235">untitled2</command>
+<command error="true" execution_time="7451">simulation</command>
+<command execution_time="248" repeat="3">untitled2</command>
+<command execution_time="196" repeat="5">FTL_Planning_Method2</command>
+<command execution_time="226">untitled2</command>
+<command execution_time="99">FTL_Planning_Method2</command>
+<command execution_time="220" repeat="3">untitled2</command>
+<command error="true" execution_time="21977" repeat="2">simulation</command>
+<command execution_time="65" repeat="3">untitled2</command>
+<command execution_time="4">R(:,:,i-1)</command>
+<command execution_time="5">R(:,:,i-1)'*R(:,:,i-1)</command>
+<command execution_time="5">R(:,:,i-1)\R(:,:,i-1)</command>
+<command execution_time="8">R(:,:,i-1)'\R(:,:,i-1)</command>
+<command execution_time="52" repeat="2">untitled2</command>
+<command execution_time="7">R(:,:,i-1)</command>
+<command execution_time="7" repeat="3">R(:,:,i-1)'*R(:,:,i-1)</command>
+<command execution_time="7">inv(R(:,:,i-1))*R(:,:,i-1)</command>
+<command execution_time="54" repeat="3">untitled2</command>
+<command execution_time="5">z(:,11)-[0.000425385485069224;0.000425385485069224;0.999999819047173]</command>
+<command execution_time="200" repeat="7">untitled2</command>
+<command error="true" execution_time="16943">simulation</command>
+<command execution_time="363" repeat="3">untitled2</command>
+<command execution_time="26554">simulation</command>
+<command execution_time="39" repeat="14">untitled2</command>
+<command execution_time="9">[0.000990831942128050;0.000990831942128050;0.999999018251581]</command>
+<command execution_time="325" repeat="2">untitled2</command>
+<command execution_time="25367" repeat="5">simulation</command>
+<command execution_time="343" repeat="2">FTL_Planning_Method2</command>
+<command error="true" execution_time="233">jointPosition2Angle</command>
+<command execution_time="231">FTL_Planning_Method2</command>
+<command execution_time="25663" repeat="2">simulation</command>
+<command execution_time="247" repeat="3">FTL_Planning_Method2</command>
+<command error="true" execution_time="204">jointPosition2Angle</command>
+</session>
+<session>
+<command time_stamp="189c9a88819">%-- 2023/8/6 15:03 --%</command>
+<command execution_time="30877">simulation</command>
+<command error="true" execution_time="702">FTL_Planning_Method1</command>
+<command execution_time="27" repeat="15">FTL_Planning_Method2</command>
+<command execution_time="5">ii-aL+1</command>
+<command execution_time="30" repeat="2">FTL_Planning_Method2</command>
+<command error="true" execution_time="99">max([k_j(ii-aL+1),0])</command>
+<command execution_time="2270" repeat="5">FTL_Planning_Method2</command>
+<command execution_time="39">plot(err_total)</command>
+<command execution_time="282">FTL_Planning_Method2</command>
+<command error="true" execution_time="545">test_jointPosition2bodyError</command>
+<command execution_time="265">FTL_Planning_Method2</command>
+<command error="true" execution_time="319" repeat="4">test_jointPosition2bodyError</command>
+<command error="true" execution_time="105" repeat="32">FTL_Planning_Method2</command>
+</session>
+<session>
+<command time_stamp="189cef5f62a">%-- 2023/8/7 15:46 --%</command>
+<command execution_time="1410" repeat="3">FTL_Planning_Method2</command>
+<command execution_time="50">plot(err_total)</command>
+<command execution_time="2137" repeat="10">FTL_Planning_Method2</command>
+</session>
+<session>
+<command time_stamp="189cf39a6fb">%-- 2023/8/7 17:00 --%</command>
+<command execution_time="640" repeat="3">FTL_Planning_Method2</command>
+<command execution_time="67">traj_generate_1</command>
+<command execution_time="998" repeat="7">FTL_Planning_Method2</command>
+<command execution_time="488">help Enve</command>
+<command error="true" execution_time="1289">FTL_Planning_Method2</command>
+<command execution_time="6">Enve(:,95)</command>
+<command execution_time="1016" repeat="6">FTL_Planning_Method2</command>
+<command execution_time="169" repeat="7">FTL_Planning_Method3</command>
+<command execution_time="969">FTL_Planning_Method2</command>
+<command execution_time="157" repeat="7">FTL_Planning_Method3</command>
+<command execution_time="973" repeat="6">FTL_Planning_Method2</command>
+</session>
+<session>
+<command time_stamp="189d8e2ae06">%-- 2023/8/9 14:01 --%</command>
+<command execution_time="1251" repeat="17">FTL_Planning_Method3</command>
+<command execution_time="1053">FTL_Planning_Method2</command>
+<command execution_time="2094" repeat="5">FTL_Planning_Method3</command>
+<command error="true" execution_time="1527" repeat="2">simulation</command>
+<command execution_time="1981" repeat="3">FTL_Planning_Method3</command>
+<command execution_time="1019">FTL_Planning_Method2</command>
+<command execution_time="1976">FTL_Planning_Method3</command>
+<command execution_time="981">FTL_Planning_Method2</command>
+</session>
+<session>
+<command time_stamp="189ddb1ed76">%-- 2023/8/10 12:26 --%</command>
+<command execution_time="1770" repeat="18">FTL_Planning_Method3</command>
+<command execution_time="2007" repeat="2">FTL_Planning_Method3_trajcg_calc</command>
+<command execution_time="1761">FTL_Planning_Method3</command>
+<command execution_time="2040">FTL_Planning_Method3_trajcg_calc</command>
+<command execution_time="4765" repeat="6">FTL_Planning_Method3</command>
+<command execution_time="2019" repeat="3">FTL_Planning_Method3_trajcg_calc</command>
+<command execution_time="4720">FTL_Planning_Method3</command>
+<command execution_time="2041">FTL_Planning_Method3_trajcg_calc</command>
+<command execution_time="4776">FTL_Planning_Method3</command>
+<command execution_time="2057">FTL_Planning_Method3_trajcg_calc</command>
+<command execution_time="6">(14.6-10.2)/14.6</command>
+</session>
+<session>
+<command time_stamp="189e3001882">%-- 2023/8/11 13:09 --%</command>
+<command execution_time="2153" repeat="3">FTL_Planning_Method3_trajcg_calc</command>
+<command execution_time="4865" repeat="3">FTL_Planning_Method3</command>
+<command execution_time="2085" repeat="2">FTL_Planning_Method3_trajcg_calc</command>
+<command execution_time="4852" repeat="3">FTL_Planning_Method3</command>
+<command execution_time="2067" repeat="10">FTL_Planning_Method3_trajcg_calc</command>
+<command execution_time="6">4.4/14.6</command>
+<command execution_time="2039">FTL_Planning_Method3_trajcg_calc</command>
+<command execution_time="66" repeat="5">traj_generate_1</command>
+<command error="true" execution_time="197">test_jointPosition2bodyError</command>
+<command execution_time="2957">FTL_Planning_Method3_trajcg_calc</command>
+<command execution_time="9594" repeat="4">FTL_Planning_Method3</command>
+<command execution_time="2985">FTL_Planning_Method3_trajcg_calc</command>
+</session>
+<session>
+<command time_stamp="18a69197287">%-- 2023/9/6 14:06 --%</command>
+<command execution_time="812">help fmincon</command>
+<command execution_time="180">help min</command>
+<command execution_time="12">1050/1200</command>
+<command execution_time="4">1850/3000</command>
+<command execution_time="11">load('traj2.mat')</command>
+<command execution_time="1165">traj_generate_1</command>
+<command execution_time="13" repeat="2">load('traj2.mat')</command>
+<command execution_time="39" repeat="15">optimization</command>
+<command error="true" execution_time="145" repeat="4">untitled6</command>
+<command execution_time="31" repeat="10">optimization</command>
+<command execution_time="6" repeat="2">Vp(:,j)</command>
+<command execution_time="268" repeat="6">optimization</command>
+</session>
+<session>
+<command time_stamp="18a73696b18">%-- 2023/9/8 14:10 --%</command>
+<command execution_time="805">optimization</command>
+<command execution_time="655">help fmincon</command>
+<command execution_time="286" repeat="2">optimization</command>
+<command execution_time="122316" repeat="19">optimization_whole_body</command>
+<command execution_time="3634" repeat="4">simulation</command>
+<command execution_time="121103" repeat="24">optimization_whole_body</command>
+<command execution_time="349" repeat="38">verifyOf_maxDevCalc</command>
+</session>
+<session>
+<command time_stamp="18a82e24f41">%-- 2023/9/11 14:16 --%</command>
+<command execution_time="674">help fmincon</command>
+<command execution_time="6219" repeat="2">optimization_whole_body</command>
+<command execution_time="79">maxDevCalc([x(1:22) 0 0.05],H10,Vp)</command>
+<command execution_time="76">maxDevCalc([x(1:22) 0 0.02],H10,Vp)</command>
+<command execution_time="81">maxDevCalc([x(1:22) 0 -0.02],H10,Vp)</command>
+<command execution_time="64">maxDevCalc([x(1:22) 0 0],H10,Vp)</command>
+<command execution_time="81">maxDevCalc([x(1:22) 0 0.01],H10,Vp)</command>
+<command execution_time="79">maxDevCalc([x(1:22) 0 0.1*pi/180],H10,Vp)</command>
+<command execution_time="1477">verifyOf_maxDevCalc</command>
+<command execution_time="100">traj_generate_1</command>
+<command execution_time="6237">optimization_whole_body</command>
+<command execution_time="79">maxDevCalc([x(1:22) 0 0.1*pi/180],H10,Vp)</command>
+<command execution_time="6206" repeat="3">optimization_whole_body</command>
+<command execution_time="267">maxDevCalc([x(1:22) 0.1*pi/180 0.1*pi/180],H10,Vp)</command>
+<command execution_time="267">maxDevCalc([x(1:22) -0.1*pi/180 -0.1*pi/180],H10,Vp)</command>
+<command execution_time="349" repeat="26">verifyOf_maxDevCalc</command>
+<command execution_time="205467">optimization_whole_body</command>
+<command execution_time="647" repeat="3">simulation</command>
+<command execution_time="10441" repeat="4">optimization_whole_body</command>
+<command execution_time="383" repeat="2">verifyOf_maxDevCalc</command>
+<command execution_time="10370">optimization_whole_body</command>
+<command execution_time="757" repeat="6">verifyOf_maxDevCalc</command>
+<command execution_time="9655" repeat="5">optimization_whole_body</command>
+<command execution_time="36" repeat="3">verifyOf_maxDevCalc</command>
+<command execution_time="26" repeat="3">verifyOf_maxDevCalc2</command>
+<command execution_time="4">length(pointi)</command>
+<command execution_time="79" repeat="25">verifyOf_maxDevCalc2</command>
+<command error="true" execution_time="209">drawHRManipulatorSimple</command>
+<command execution_time="78" repeat="2">verifyOf_maxDevCalc2</command>
+<command execution_time="4">forwardKinematics(betas(:),A1(i,:))</command>
+<command error="true" execution_time="192">drawHRManipulatorSimple</command>
+<command execution_time="94" repeat="9">verifyOf_maxDevCalc2</command>
+<command error="true" execution_time="190">drawHRManipulatorSimple</command>
+<command execution_time="79" repeat="2">verifyOf_maxDevCalc2</command>
+<command execution_time="49" repeat="3">untitled3</command>
+<command error="true" execution_time="219">drawHRManipulatorSimple</command>
+<command execution_time="109" repeat="14">verifyOf_maxDevCalc2</command>
+<command execution_time="34347" repeat="3">optimization_whole_body</command>
+<command execution_time="56" repeat="7">draw_test</command>
+</session>
+<session>
+<command time_stamp="18a881a81e9">%-- 2023/9/12 14:35 --%</command>
+<command execution_time="401825">optimization_whole_body</command>
+<command execution_time="111" repeat="3">draw_test</command>
+<command execution_time="150">verifyOf_maxDevCalc2</command>
+<command execution_time="34" repeat="6">optimization_whole_body</command>
+<command execution_time="757">help round</command>
+<command execution_time="48967" repeat="10">optimization_whole_body</command>
+<command execution_time="120">draw_test</command>
+<command execution_time="15210" repeat="5">optimization_whole_body</command>
+<command execution_time="76" repeat="3">draw_test</command>
+<command execution_time="86773" repeat="2">optimization_whole_body</command>
+<command execution_time="51" repeat="2">draw_test</command>
+<command execution_time="158">help fmincon</command>
+<command execution_time="127635">optimization_whole_body</command>
+<command execution_time="61" repeat="2">draw_test</command>
+<command execution_time="95" repeat="9">verifyOf_maxDevCalc2</command>
+<command execution_time="13">load('angles2.mat')</command>
+<command execution_time="79" repeat="5">verifyOf_maxDevCalc2</command>
+<command execution_time="14">load('angles2.mat')</command>
+<command execution_time="82" repeat="2">verifyOf_maxDevCalc2</command>
+<command execution_time="39698">main</command>
+<command execution_time="12592" repeat="13">verifyOf_maxDevCalc2</command>
+<command execution_time="101">help fminunc</command>
+<command execution_time="73542" repeat="2">optimization_whole_body</command>
+<command execution_time="58" repeat="2">draw_test</command>
+<command execution_time="808" repeat="10">optimization_whole_body</command>
+<command execution_time="29" repeat="2">verifyOf_maxDevCalc2</command>
+<command execution_time="93">draw_test</command>
+<command execution_time="75" repeat="4">verifyOf_maxDevCalc2</command>
+<command execution_time="117132" repeat="2">optimization_whole_body</command>
+<command execution_time="78" repeat="3">draw_test</command>
+<command execution_time="576">optimization_whole_body</command>
+<command execution_time="36">verifyOf_maxDevCalc2</command>
+<command execution_time="82">draw_test</command>
+<command execution_time="13">0.07*180/pi</command>
+<command execution_time="84" repeat="3">draw_test</command>
+<command execution_time="29">verifyOf_maxDevCalc2</command>
+<command error="true" execution_time="211" repeat="2">maxDevCalc2</command>
+<command execution_time="71" repeat="7">draw_test</command>
+</session>
+<session>
+<command time_stamp="18a8cdb48b6">%-- 2023/9/13 12:44 --%</command>
+<command error="true" execution_time="668">draw_test</command>
+<command execution_time="101099" repeat="2">optimization_whole_body</command>
+<command execution_time="351">help pause</command>
+<command execution_time="327">help delay</command>
+<command execution_time="135">help delayseq</command>
+<command execution_time="17144">draw_test</command>
+<command execution_time="1471" repeat="2">FTL_Planning_Method2</command>
+</session>
+<session>
+<command time_stamp="18a8d8b939e">%-- 2023/9/13 15:57 --%</command>
+<command batch="5">calc_dev</command>
+<command batch="5" execution_time="60">calc_dev</command>
+<command execution_time="69065" repeat="5">calc_dev</command>
+<command execution_time="53606" repeat="2">draw_test</command>
+<command execution_time="262065">optimization_whole_body</command>
+<command execution_time="21890">calc_dev</command>
+<command execution_time="7">max(dev)</command>
+<command execution_time="7802" repeat="3">draw_test</command>
+<command execution_time="11763" repeat="2">calc_dev</command>
+<command execution_time="5150" repeat="3">draw_test</command>
+<command execution_time="11644">calc_dev</command>
+<command execution_time="4">max(dev)</command>
+<command execution_time="5">4.9649/7</command>
+</session>
+<session>
+<command time_stamp="18a927c8c01">%-- 2023/9/14 14:59 --%</command>
+<command execution_time="2380">FTL_Planning_Method2</command>
+<command execution_time="10962">calc_dev</command>
+<command execution_time="775" repeat="3">FTL_Planning_Method2</command>
+<command execution_time="50915" repeat="3">calc_dev</command>
+<command execution_time="17413">draw_test</command>
+<command execution_time="33">FTL_Planning_Method2</command>
+<command execution_time="28">draw_test</command>
+<command execution_time="743" repeat="2">FTL_Planning_Method2</command>
+<command error="true" execution_time="6858">draw_test</command>
+<command execution_time="777">FTL_Planning_Method2</command>
+<command execution_time="17868">draw_test</command>
+<command execution_time="799" repeat="2">FTL_Planning_Method2</command>
+<command execution_time="17769">draw_test</command>
+<command execution_time="55662">calc_dev</command>
+<command execution_time="4392637">optimization_whole_body</command>
+</session>
+<session>
+<command time_stamp="18a93726ae1">%-- 2023/9/14 19:27 --%</command>
+<command execution_time="1407">FTL_Planning_Method2</command>
+<command execution_time="2148065">optimization_whole_body</command>
+<command execution_time="37562">calc_dev</command>
+</session>
+<session>
+<command time_stamp="18a9cc614cf">%-- 2023/9/16 14:55 --%</command>
+<command batch="6" error="true" execution_time="51" repeat="8">optimization_whole_body</command>
+<command batch="6" error="true" execution_time="443">optimization_whole_body</command>
+<command execution_time="381213">optimization_whole_body</command>
+<command execution_time="8757" repeat="3">draw_test</command>
+<command error="true" execution_time="6995">calc_dev</command>
+</session>
+<session>
+<command time_stamp="18aab2e0952">%-- 2023/9/19 10:03 --%</command>
+<command execution_time="12316" repeat="3">draw_test</command>
+</session>
+<session>
+<command time_stamp="18ab11573e4">%-- 2023/9/20 13:34 --%</command>
+<command execution_time="38915">draw_test</command>
+<command execution_time="8">max(dev0)</command>
+<command execution_time="6">max(dev1)</command>
+<command execution_time="17">mean(dev0)</command>
+<command execution_time="4">mean(dev1)</command>
+<command execution_time="879">help fiminunc</command>
+<command error="true" execution_time="566">fminmax</command>
+<command execution_time="255">help fminmax</command>
+<command execution_time="954442" repeat="2">optimization_whole_body</command>
+<command execution_time="176">help fmincon</command>
+<command execution_time="39479">draw_test</command>
+<command execution_time="795374">optimization_whole_body</command>
+<command execution_time="39032">draw_test</command>
+<command execution_time="826751" repeat="2">optimization_whole_body</command>
+<command execution_time="48171">draw_test</command>
+<command batch="7">figure;</command>
+<command batch="7">for i=1:15:size(q_opt,1)</command>
+<command batch="7">clf;</command>
+<command batch="7">H10=eye(4)+[zeros(4,3) [as*i; 0; 0; 0]];</command>
+<command batch="7">drawHRManipulatorSimple(q_opt(i,:),H10);</command>
+<command batch="7">hold on;</command>
+<command batch="7">plot3(Vp(1,:),Vp(2,:),Vp(3,:));</command>
+<command batch="7">axis([1600 3000 -500 500 -600 600]);</command>
+<command batch="7">pause(0.2);</command>
+<command batch="7" execution_time="8317">end</command>
+<command execution_time="7">sqrt(500^2-75^2)</command>
+<command execution_time="5">500-ans</command>
+</session>
+<session>
+<command time_stamp="18ab58ce595">%-- 2023/9/21 10:23 --%</command>
+<command execution_time="7005">optimization_whole_body</command>
+<command execution_time="1190">draw_test</command>
+</session>
+<session>
+<command time_stamp="18ab7bbffb5">%-- 2023/9/21 20:34 --%</command>
+<command execution_time="127932" repeat="4">optimization_whole_body_single</command>
+<command execution_time="7" repeat="2">plot(dev)</command>
+</session>
+<session>
+<command time_stamp="18b5ae67c32">%-- 2023/10/23 12:58 --%</command>
+<command batch="8" error="true">simulation</command>
+<command batch="8" error="true" execution_time="11262">simulation</command>
+<command error="true" execution_time="19435" repeat="3">simulation</command>
+</session>
+<session>
+<command time_stamp="18c8ac0d3dd">%-- 2023/12/21 13:02 --%</command>
+<command execution_time="2159959" repeat="2">opt_ga</command>
+<command execution_time="708">plot(dev)</command>
+<command execution_time="724">help ga</command>
+<command execution_time="26049" repeat="4">opt_ga</command>
+<command execution_time="52">plot(dev)</command>
+<command execution_time="98" repeat="6">draw1</command>
+<command execution_time="10">load('result-SQP.mat')</command>
+<command error="true" execution_time="227" repeat="5">draw1</command>
+<command execution_time="154">help gcf</command>
+<command execution_time="281">help plot</command>
+<command execution_time="135" repeat="4">draw1</command>
+</session>
+<session>
+<command time_stamp="18c95c14d9a">%-- 2023/12/23 16:18 --%</command>
+<command execution_time="44819">optimization_body_in</command>
+<command execution_time="720">plot(dev)</command>
+<command execution_time="189821" repeat="3">optimization_body_in</command>
+<command execution_time="54">plot(dev)</command>
+<command execution_time="197419">opt_ga</command>
+<command execution_time="45" repeat="2">plot(dev)</command>
+<command execution_time="184658" repeat="2">optimization_body_in</command>
+<command execution_time="489" repeat="17">verifyOf_maxDevCalc2_good</command>
+<command execution_time="6">7.09626-7.0942</command>
+</session>
+<session>
+<command time_stamp="18c9fd55415">%-- 2023/12/25 15:16 --%</command>
+<command execution_time="1204">draw1</command>
+<command execution_time="11">load('result-sqp.mat')</command>
+<command execution_time="225" repeat="2">draw1</command>
+<command execution_time="652">help fmincon</command>
+<command execution_time="82" repeat="4">optimization_body_in</command>
+<command execution_time="39">plot(dev)</command>
+<command execution_time="43848">optimization_body_in</command>
+<command execution_time="45">plot(dev)</command>
+<command execution_time="43280">optimization_body_in</command>
+<command execution_time="37" repeat="2">plot(dev)</command>
+<command execution_time="183">help lsqlin</command>
+<command execution_time="50464">optimization_body_in</command>
+<command execution_time="36" repeat="2">plot(dev)</command>
+<command execution_time="53099">optimization_body_in</command>
+<command execution_time="34">plot(dev)</command>
+<command execution_time="54557">optimization_body_in</command>
+<command execution_time="36" repeat="2">plot(dev)</command>
+<command execution_time="55993">optimization_body_in</command>
+<command execution_time="37">plot(dev)</command>
+<command execution_time="154">help ga</command>
+<command execution_time="441">help sqp</command>
+<command error="true" execution_time="293">hlep particleswarm</command>
+<command execution_time="134">help particleswarm</command>
+<command error="true" execution_time="125625" repeat="4">opt_ga</command>
+<command execution_time="5290" repeat="5">verifyOf_oneMoment_result</command>
+<command execution_time="151">help min</command>
+<command execution_time="21130" repeat="5">verifyOf_oneMoment_result</command>
+<command execution_time="109">help fmincon</command>
+<command execution_time="181572" repeat="5">optimization_body_in</command>
+<command execution_time="37" repeat="3">plot(dev)</command>
+<command error="true" execution_time="171">hwlp particleswarm</command>
+<command execution_time="69">help particleswarm</command>
+<command execution_time="2006128" repeat="2">opt_pso</command>
+<command execution_time="38" repeat="2">plot(dev)</command>
+<command execution_time="80">help ga</command>
+<command execution_time="192316" repeat="6">opt_pso</command>
+<command execution_time="37">plot(dev)</command>
+<command execution_time="455217" repeat="3">opt_pso</command>
+<command execution_time="38">plot(dev)</command>
+<command execution_time="227804">opt_pso</command>
+<command execution_time="37" repeat="2">plot(dev)</command>
+<command execution_time="743304" repeat="6">opt_pso</command>
+<command execution_time="37" repeat="2">plot(dev)</command>
+<command execution_time="680">opt_pso</command>
+<command execution_time="39" repeat="2">plot(dev)</command>
+<command execution_time="15">rand</command>
+<command execution_time="222">help rand</command>
+<command execution_time="105051">optimization_body_in</command>
+<command execution_time="76">plot(dev)</command>
+<command execution_time="227174" repeat="3">optimization_body_in</command>
+<command execution_time="39">plot(dev)</command>
+<command execution_time="920803">optimization_body_in</command>
+<command execution_time="40">plot(dev)</command>
+<command execution_time="56059">optimization_body_in</command>
+<command execution_time="36">plot(dev)</command>
+<command execution_time="55387">optimization_body_in</command>
+<command execution_time="39" repeat="2">plot(dev)</command>
+<command execution_time="54608">optimization_body_in</command>
+<command execution_time="40">plot(dev)</command>
+<command execution_time="213133" repeat="2">optimization_body_in</command>
+<command execution_time="37" repeat="2">plot(dev)</command>
+<command execution_time="744962" repeat="5">opt_ga</command>
+<command execution_time="42" repeat="2">plot(dev)</command>
+<command execution_time="3">toc</command>
+<command execution_time="36">plot(dev)</command>
+<command error="true" execution_time="142" repeat="3">draw1</command>
+<command execution_time="549">help set</command>
+<command execution_time="100" repeat="5">draw1</command>
+<command execution_time="9">load('result-sqp-4初值.mat')</command>
+<command execution_time="933005">optimization_body_in</command>
+<command execution_time="86" repeat="12">draw1</command>
+<command execution_time="9" repeat="2">load('angles_R400_tl.mat')</command>
+<command error="true" execution_time="159">draw1</command>
+<command execution_time="4">load('trajR400.mat', 'z')</command>
+<command execution_time="6">load('trajR400.mat', 'y')</command>
+<command execution_time="4">load('trajR400.mat', 'x')</command>
+<command execution_time="79">load('angles_R400_tl.mat')</command>
+<command execution_time="20">load('angles_R400_tl.mat', 'Angles')</command>
+<command execution_time="27" repeat="5">calc_dev</command>
+<command execution_time="483" repeat="2">verifyOf_maxDevCalc2_good</command>
+<command execution_time="152" repeat="3">draw1</command>
+</session>
+<session>
+<command time_stamp="18cf768d560">%-- 2024/1/11 15:24 --%</command>
+<command execution_time="2610" repeat="2">help splines</command>
+</session>
+<session>
+<command time_stamp="18d0ae051a9">%-- 2024/1/15 10:08 --%</command>
+<command execution_time="144" repeat="12">traj_generate</command>
+<command execution_time="16">untitled5</command>
+<command execution_time="39">5</command>
+<command execution_time="6">untitled5</command>
+<command execution_time="6">3</command>
+<command execution_time="296">help diff</command>
+<command error="true" execution_time="153">traj_generate</command>
+<command error="true" execution_time="479" repeat="3">main</command>
+<command execution_time="663" repeat="3">curve_given3D</command>
+</session>
+<session>
+<command time_stamp="18d0c562f31">%-- 2024/1/15 16:56 --%</command>
+<command batch="9" error="true">traj_generate</command>
+<command batch="9" error="true" execution_time="1524">traj_generate</command>
+<command error="true" execution_time="188">traj_generate</command>
+<command execution_time="233">help syms</command>
+<command execution_time="235" repeat="14">traj_generate</command>
+<command execution_time="141">help roots</command>
+<command execution_time="268" repeat="5">traj_generate</command>
+<command execution_time="137">help coeffs</command>
+<command execution_time="93">help flip</command>
+<command execution_time="194" repeat="3">traj_generate</command>
+<command execution_time="15">roots(1)</command>
+<command execution_time="8">roots([1 0])</command>
+<command execution_time="8">roots([1 1])</command>
+<command execution_time="174" repeat="20">traj_generate</command>
+<command execution_time="331">help solve</command>
+<command execution_time="206" repeat="10">traj_generate</command>
+<command execution_time="94">help subs</command>
+<command execution_time="175" repeat="4">traj_generate</command>
+<command execution_time="233">help solve</command>
+<command execution_time="227">traj_generate</command>
+<command execution_time="227">help solve</command>
+<command execution_time="263" repeat="6">traj_generate</command>
+<command execution_time="270" repeat="3">point2curve</command>
+<command execution_time="86">help line</command>
+<command execution_time="202" repeat="9">point2curve</command>
+</session>
+<session>
+<command time_stamp="18d30628827">%-- 2024/1/22 16:56 --%</command>
+<command execution_time="3443">point2curve</command>
+<command execution_time="389" repeat="2">lineSegment2curve</command>
+<command execution_time="295">point2curve</command>
+<command error="true" execution_time="416" repeat="2">lineSegment2curve</command>
+<command execution_time="208">point2curve</command>
+<command execution_time="871" repeat="13">lineSegment2curve</command>
+<command execution_time="897" repeat="8">line2curve</command>
+<command execution_time="316">help sym</command>
+<command error="true" execution_time="1314" repeat="5">line2curve</command>
+<command execution_time="1374" repeat="3">lineSegment2curve</command>
+<command execution_time="1182" repeat="5">line2curve</command>
+<command execution_time="1083" repeat="2">lineSegment2curve</command>
+<command execution_time="1083" repeat="10">line2curve</command>
+<command execution_time="72">line2curveDevCalc(1,J(:,1),J(:,2),p_bezier)</command>
+<command execution_time="65">line2curveDevCalc(0.9,J(:,1),J(:,2),p_bezier)</command>
+<command execution_time="66">line2curveDevCalc(0.7,J(:,1),J(:,2),p_bezier)</command>
+<command execution_time="1208" repeat="3">line2curve</command>
+<command execution_time="72">line2curveDevCalc(0.3,J(:,1),J(:,2),p_bezier)</command>
+<command execution_time="62">line2curveDevCalc(1,J(:,1),J(:,2),p_bezier)</command>
+<command execution_time="47">line2curveDevCalc(0.5,J(:,1),J(:,2),p_bezier)</command>
+<command execution_time="877" repeat="2">line2curve</command>
+<command execution_time="46">line2curveDevCalc(0.5,J(:,1),J(:,2),p_bezier)</command>
+<command execution_time="808" repeat="18">line2curve</command>
+<command execution_time="1099" repeat="6">test_line2curve</command>
+<command execution_time="150">help fmincon</command>
+<command execution_time="728" repeat="2">line2curve</command>
+<command execution_time="1180">polyline2curve</command>
+<command execution_time="115">help mod</command>
+<command execution_time="931" repeat="5">polyline2curve</command>
+</session>
+<session>
+<command time_stamp="18d50617199">%-- 2024/1/28 22:02 --%</command>
+<command execution_time="1140" repeat="2">polyline2curve</command>
+<command execution_time="570" repeat="2">line2curve</command>
+<command execution_time="365" repeat="4">polyline2curve</command>
+</session>
+<session>
+<command time_stamp="18d5ec2c0f4">%-- 2024/1/31 17:03 --%</command>
+<command execution_time="13" repeat="4">ang2points(zeros(1,12),zeros(1,12),0)</command>
+<command error="true" execution_time="147" repeat="2">ang2points</command>
+<command execution_time="12">ang2points(zeros(1,12),zeros(1,12),0)</command>
+<command error="true" execution_time="200" repeat="2">ang2points</command>
+<command error="true" execution_time="276">ang2points(zeros(1,12),zeros(1,12),0)</command>
+<command error="true" execution_time="210">ang2points</command>
+<command execution_time="9" repeat="2">ang2points(zeros(1,12),zeros(1,12),0)</command>
+<command error="true" execution_time="91" repeat="3">ang2points(zeros(1,12),zeros(1,12),5)</command>
+<command execution_time="6">cd 'H:\运动规划-最优化\解析法'</command>
+<command execution_time="8">ang2points(zeros(1,12),zeros(1,12),5)</command>
+<command execution_time="7">ang2points([0.1,zeros(1,11)],zeros(1,12),5)</command>
+<command execution_time="7">ang2points([zeros(1,11),0.1],zeros(1,12),5)</command>
+</session>
+<session>
+<command time_stamp="18dcac3aa64">%-- 2024/2/21 16:23 --%</command>
+<command execution_time="25">untitled5</command>
+<command execution_time="45">5</command>
+<command execution_time="5225">polyline2curve</command>
+<command error="true" execution_time="101" repeat="19">oneMoment_Arm2Curve</command>
+<command error="true" execution_time="162" repeat="2">Arm2CurveDevCalc(angle_last, aL, p_bezier)</command>
+<command error="true" execution_time="92">ang2JointPos(angle_last,aL)</command>
+<command error="true" execution_time="88">Arm2CurveDevCalc(angle_last, aL, p_bezier)</command>
+<command execution_time="12">ang2JointPos(angle_last,aL)</command>
+<command error="true" execution_time="105">Arm2CurveDevCalc</command>
+<command execution_time="34" repeat="5">Arm2CurveDevCalc(angle_last, aL, p_bezier)</command>
+<command execution_time="5">zeros(1,24-2*dim)</command>
+</session>
+<session>
+<command time_stamp="18dcf4cee05">%-- 2024/2/22 13:32 --%</command>
+<command batch="10" error="true">oneMoment_Arm2Curve</command>
+<command batch="10" error="true" execution_time="4084">oneMoment_Arm2Curve</command>
+<command error="true" execution_time="102">Arm2CurveDevCalc(angle_last, aL, p_bezier)</command>
+<command error="true" execution_time="158">Arm2CurveDevCalc</command>
+<command execution_time="46" repeat="2">Arm2CurveDevCalc(angle_last, aL, p_bezier)</command>
+<command error="true" execution_time="104">[zeros(1,(24-2*dim)), angle]</command>
+<command error="true" execution_time="86">angle</command>
+<command error="true" execution_time="1161">oneMoment_Arm2Curve</command>
+<command execution_time="225" repeat="2">Arm2CurveDevCalc(angle_last, aL, p_bezier)</command>
+<command error="true" execution_time="4374" repeat="2">oneMoment_Arm2Curve</command>
+<command execution_time="889">drawHRManipulatorSimple(angle_all,aL);</command>
+<command execution_time="6298" repeat="12">oneMoment_Arm2Curve</command>
+<command execution_time="388">help globalsearch</command>
+<command execution_time="34974" repeat="15">oneMoment_Arm2Curve</command>
+<command execution_time="46">surf(dev);</command>
+<command execution_time="8">aaaaaa = [a+(b-a)/num*3 a+(b-a)/num*7]</command>
+<command execution_time="526">oneMoment_Arm2Curve</command>
+<command execution_time="503">Arm2CurveDevCalc([-0.105306185748330,0.148031845837151], aL, p_bezier)</command>
+<command execution_time="649">Arm2CurveDevCalc([0.148031845837151,-0.105306185748330], aL, p_bezier)</command>
+<command execution_time="9992" repeat="2">oneMoment_Arm2Curve</command>
+</session>
+<session>
+<command time_stamp="18de4fd7ea9">%-- 2024/2/26 18:37 --%</command>
+<command execution_time="3524">oneMoment_Arm2Curve</command>
+<command error="true" execution_time="306">Arm2CurveDevCalc</command>
+<command execution_time="443">oneMoment_Arm2Curve</command>
+<command execution_time="2038">line2curveDevVectorFind(J(:,i),J(:,i+1),curve)</command>
+<command execution_time="852">[q,vecdev]=line2curveDevVectorFind(J(:,i),J(:,i+1),curve)</command>
+<command execution_time="239" repeat="3">oneMoment_Arm2Curve</command>
+<command execution_time="47" repeat="3">angle = Arm2CurveDevOptimization(angle,aL,curve)</command>
+<command error="true" execution_time="1913" repeat="6">angle = Arm2CurveDevOptimization(angle,aL,p_bezier)</command>
+<command execution_time="364">oneMoment_Arm2Curve</command>
+<command error="true" execution_time="17731" repeat="3">angle = Arm2CurveDevOptimization(angle,aL,p_bezier)</command>
+<command error="true" execution_time="114">pos = ang2JointPos(ones(24,1))</command>
+<command execution_time="7">pos = ang2JointPos(ones(24,1),0)</command>
+<command error="true" execution_time="133">JointPos2Angle(pos)</command>
+<command execution_time="25" repeat="4">jointPos2Angle(pos)</command>
+<command execution_time="16421" repeat="5">angle = Arm2CurveDevOptimization(angle,aL,p_bezier)</command>
+<command execution_time="18442">oneMoment_Arm2Curve</command>
+</session>
+<session>
+<command time_stamp="18df28cb2f6">%-- 2024/2/29 9:48 --%</command>
+<command execution_time="22148" repeat="16">oneMoment_Arm2Curve</command>
+<command execution_time="15">jointPos2Angle(J_all)</command>
+<command execution_time="156" repeat="25">oneMoment_Arm2Curve</command>
+<command execution_time="602">help solve</command>
+<command execution_time="100" repeat="2">oneMoment_Arm2Curve</command>
+<command batch="11" error="true">tic;</command>
+<command batch="11" error="true">% 注意这里是有可能是有多个根的，现在暂时还没考虑！！！</command>
+<command batch="11" error="true">syms t;</command>
+<command batch="11" error="true">t_p=vpa(solve(f_poly,t,"Real",true));</command>
+<command batch="11" error="true">% t_p=vpa(root(f_poly,t));</command>
+<command batch="11" error="true" execution_time="287">toc;</command>
+<command execution_time="130" repeat="6">oneMoment_Arm2Curve</command>
+<command error="true" execution_time="157" repeat="2">Point2CurveDevCalc</command>
+<command execution_time="62" repeat="3">oneMoment_Arm2Curve</command>
+<command execution_time="16">t_bezier'*(q0-p_bezier)</command>
+<command execution_time="17">(q0-p_bezier)</command>
+<command execution_time="4">q0</command>
+<command execution_time="14">(q0-p_bezier)</command>
+<command execution_time="25">t_bezier'</command>
+<command execution_time="19">conj(t)</command>
+<command execution_time="258">help conj</command>
+<command execution_time="26265" repeat="11">oneMoment_Arm2Curve</command>
+<command execution_time="15">sqrt(100^2+4)</command>
+<command execution_time="11">sqrt(100^2+25)</command>
+<command execution_time="10">sqrt(1000^2+25)</command>
+<command execution_time="13">sqrt(50^2+25)</command>
+<command execution_time="443" repeat="6">oneMoment_Arm2Curve</command>
+</session>
+<session>
+<command time_stamp="18e096c0861">%-- 2024/3/4 20:24 --%</command>
+<command execution_time="641" repeat="8">oneMoment_Arm2Curve</command>
+<command execution_time="546">Line2CurveDevCalc_ObjectiveFunc(1.5,q0,d_vec,J1,J2,curve)</command>
+<command execution_time="418">Line2CurveDevCalc_ObjectiveFunc(1,q0,d_vec,J1,J2,curve)</command>
+<command error="true" execution_time="17">Line2CurveDevCalc(J1,J2、,curve)</command>
+<command execution_time="377">Line2CurveDevCalc(J1,J2,curve)</command>
+<command execution_time="8006">oneMoment_Arm2Curve</command>
+<command error="true" execution_time="329">Arm2CurveDevOptimization</command>
+<command execution_time="6809">oneMoment_Arm2Curve</command>
+<command execution_time="428" repeat="2">Line2CurveDevCalc(J_in(:,1),J_in(:,2),curve)</command>
+<command execution_time="44" repeat="2">Point2CurveDevCalc(1,J1,J2,curve)</command>
+<command execution_time="87550" repeat="5">oneMoment_Arm2Curve</command>
+<command error="true" execution_time="209" repeat="2">Point2CurveDevCalc</command>
+<command execution_time="348" repeat="4">oneMoment_Arm2Curve</command>
+<command execution_time="52">Point2CurveDevCalc(1,J1,J2,curve)</command>
+<command execution_time="301">help multistart</command>
+<command execution_time="110">help createOptimProblem</command>
+<command execution_time="389">help run</command>
+<command error="true" execution_time="6441" repeat="6">oneMoment_Arm2Curve</command>
+<command error="true" execution_time="244">Line2CurveDevOptimization</command>
+<command error="true" execution_time="53676" repeat="2">oneMoment_Arm2Curve</command>
+<command error="true" execution_time="194" repeat="2">Line2CurveDevOptimization</command>
+<command execution_time="454">oneMoment_Arm2Curve</command>
+<command batch="12" error="true">for i=1:50</command>
+<command batch="12" error="true">f(i)=Line2CurveDevCalc_ObjectiveFunc(0.2*i,q0,d_vec,J1,J2,curve)</command>
+<command batch="12" error="true" execution_time="6006">end</command>
+<command execution_time="1591">f(i)=Line2CurveDevCalc_ObjectiveFunc(0.2*i,q0,d_vec,J1,J2,curve)</command>
+<command batch="13" error="true">for i=1:50</command>
+<command batch="13" error="true">f(i)=Line2CurveDevCalc_ObjectiveFunc(0.2*i,q0,d_vec,J1,J2,curve);</command>
+<command batch="13" error="true" execution_time="103">end</command>
+<command execution_time="409">oneMoment_Arm2Curve</command>
+<command batch="14">for i=1:50</command>
+<command batch="14">f(i)=Line2CurveDevCalc_ObjectiveFunc(0.2*i,q0,d_vec,J1,J2,curve);</command>
+<command batch="14" execution_time="42523">end</command>
+<command execution_time="80">plot(f)</command>
+<command batch="15" error="true">for i=1:50</command>
+<command batch="15" error="true">f(i)=Line2CurveDevCalc_ObjectiveFunc(0.2*i,q0,d_vec,J1,J2,curve);</command>
+<command batch="15" error="true" execution_time="2005">end</command>
+<command execution_time="929">oneMoment_Arm2Curve</command>
+<command batch="16">for i=1:50</command>
+<command batch="16">f(i)=Line2CurveDevCalc_ObjectiveFunc(0.4*i,q0,d_vec,J1,J2,curve);</command>
+<command batch="16" execution_time="35621">end</command>
+<command execution_time="85">plot(f)</command>
+<command execution_time="408">oneMoment_Arm2Curve</command>
+<command batch="17">for i=1:50</command>
+<command batch="17">f(i)=Line2CurveDevCalc_ObjectiveFunc(0.02*i,q0,d_vec,J1,J2,curve);</command>
+<command batch="17" execution_time="34756">end</command>
+<command execution_time="46">plot(f)</command>
+<command execution_time="300">help fmincon</command>
+<command error="true" execution_time="13540" repeat="16">oneMoment_Arm2Curve</command>
+<command execution_time="568">help sleep</command>
+<command execution_time="157">help stop</command>
+<command execution_time="141">help pause</command>
+<command error="true" execution_time="7102">oneMoment_Arm2Curve</command>
+<command error="true" execution_time="2931822" repeat="7">Moments_Arm2Curve</command>
+<command execution_time="93" repeat="6">visualization</command>
+<command execution_time="34508" repeat="3">Visualization</command>
+<command execution_time="29058">Moments_Arm2Curve</command>
+<command execution_time="51">oneMoment_Arm2Curve</command>
+<command execution_time="285">help fmincon</command>
+</session>
+<session>
+<command time_stamp="18e18bb14fd">%-- 2024/3/7 19:44 --%</command>
+<command execution_time="481">help fminbnd</command>
+<command execution_time="654" repeat="2">oneMoment_Arm2Curve</command>
+<command execution_time="1431">Line2CurveDevCalc_ObjectiveFunc(0.6,q0,d_vec,J1,J2,curve)</command>
+<command execution_time="17899" repeat="2">oneMoment_Arm2Curve</command>
+</session>
+<session>
+<command time_stamp="18e1d220b81">%-- 2024/3/8 16:15 --%</command>
+<command execution_time="13">load angles-100.mat</command>
+<command execution_time="742">plot(angles(:,24))</command>
+<command execution_time="72">plot(angles(:,23))</command>
+<command execution_time="65">plot(angles(:,22))</command>
+<command execution_time="50">plot(angles(:,21))</command>
+<command error="true" execution_time="424" repeat="8">oneMoment_Arm2Curve</command>
+<command execution_time="374">help fminbnd</command>
+<command execution_time="1097">oneMoment_Arm2Curve</command>
+</session>
+</history>

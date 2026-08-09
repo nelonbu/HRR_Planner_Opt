@@ -11,9 +11,14 @@ function active = selectActiveCSSCSamples(state, params)
     if ~isfield(params, 'activeTopK')
         params.activeTopK = 20;
     end
+    if ~isfield(params, 'activeMode') || isempty(params.activeMode)
+        params.activeMode = 'topk';
+    end
 
     c = state.clearance(:);
-    valid = isfinite(c) & state.validLine(:);
+    % Positive Inf is a valid "no obstacle" clearance. NaN denotes an
+    % unavailable chord-clearance evaluation and must not enter the set.
+    valid = ~isnan(c) & state.validLine(:);
 
     % In hybrid clearance mode, G/M/N probes are used to select candidate
     % chords, but active optimization samples should use exact segment
@@ -38,6 +43,16 @@ function active = selectActiveCSSCSamples(state, params)
     end
 
     threshold = params.dMin + params.activeClearanceMargin;
+    activeMode = lower(char(string(params.activeMode)));
+    if strcmp(activeMode, 'all')
+        active.indices = idxValid(:);
+        active.threshold = threshold;
+        active.mode = 'all';
+        return;
+    elseif ~any(strcmp(activeMode, {'topk','threshold-topk'}))
+        error('Unknown params.activeMode: %s', char(params.activeMode));
+    end
+
     idxUnsafe = idxValid(c(idxValid) < threshold);
 
     if isempty(idxUnsafe)

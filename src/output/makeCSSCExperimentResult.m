@@ -1,9 +1,16 @@
-function result = makeCSSCExperimentResult(config, seed, obstacles, paths, optimizerInfo, metrics, timing, successFlags)
+function result = makeCSSCExperimentResult( ...
+        config, seed, obstacles, paths, optimizerInfo, metrics, timing, ...
+        successFlags, stageMetrics, parameters, provenance)
 %MAKECSSCEXPERIMENTRESULT Pack a stable result.mat structure.
 %
 % Required saved fields:
 %   config, seed, obstacles, paths.Pinit, paths.Popt, paths.pathRRT,
 %   optimizerInfo, highPrecisionMetrics, timing, successFlags
+%
+% Optional experiment-audit fields:
+%   stageHighPrecisionMetrics : frontend/initial/final evaluations
+%   parameters                : exact evaluation/optimization snapshots
+%   provenance                : code, MATLAB, and hardware metadata
 %
 % The function accepts partial structs and fills missing top-level fields,
 % so demos can save comparable result.mat files without duplicating packing
@@ -17,6 +24,9 @@ function result = makeCSSCExperimentResult(config, seed, obstacles, paths, optim
     if nargin < 6 || isempty(metrics); metrics = struct(); end
     if nargin < 7 || isempty(timing); timing = struct(); end
     if nargin < 8 || isempty(successFlags); successFlags = struct(); end
+    if nargin < 9 || isempty(stageMetrics); stageMetrics = struct(); end
+    if nargin < 10 || isempty(parameters); parameters = struct(); end
+    if nargin < 11 || isempty(provenance); provenance = struct(); end
 
     paths = setPathDefault(paths, 'Pinit', []);
     paths = setPathDefault(paths, 'Popt', []);
@@ -47,6 +57,9 @@ function result = makeCSSCExperimentResult(config, seed, obstacles, paths, optim
     result.paths = paths;
     result.optimizerInfo = optimizerInfo;
     result.highPrecisionMetrics = metrics;
+    result.stageHighPrecisionMetrics = stageMetrics;
+    result.parameters = parameters;
+    result.provenance = provenance;
     result.timing = timing;
     result.successFlags = successFlags;
 end
